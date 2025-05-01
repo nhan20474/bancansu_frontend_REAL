@@ -5,7 +5,7 @@ function App() {
   return (
     <div className="layout">
       <aside className="sidebar">
-        <div className="logo"> CLASS MANAGER</div>
+        <div className="logo"> CLASS MANAGER </div>
         <ul className="menu">
           <li><i className="fas fa-home"></i> Trang chủ</li>
           <li><i className="fas fa-user"></i> Hồ sơ cá nhân</li>
