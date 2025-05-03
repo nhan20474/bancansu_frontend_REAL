@@ -1,30 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './App.css';
-
+import Sidebar from './layouts/Sidebar';
+import Navbar from './layouts/Navbar';
+import Footer from './layouts/Footer';
+import Login from './user/login';
 function App() {
-  return (
-    <div className="layout">
-      <aside className="sidebar">
-        <div className="logo"> CLASS MANAGER </div>
-        <ul className="menu">
-          <li><i className="fas fa-home"></i> Trang chủ</li>
-          <li><i className="fas fa-user"></i> Hồ sơ cá nhân</li>
-          <li><i className="fas fa-book"></i> Tài liệu</li>
-          <li><i className="fas fa-users"></i> Diễn đàn</li>
-          <li><i className="fas fa-clipboard-list"></i> Khảo sát</li>
-          <li><i className="fas fa-check-circle"></i> Rèn luyện</li>
-          <li><i className="fas fa-question-circle"></i> Trợ giúp</li>
-          <li><i className="fas fa-solid fa-ellipsis"></i> Khác</li>
-          <li><i className="fas fa-cogs"></i> Tài khoản</li>
-        </ul>
-      </aside>
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dropdowns, setDropdowns] = useState({
+    docs: false,
+    forum: false,
+    survey: false,
+    other: false,
+  });
 
-      <main className="main">
-        <header className="main-header">
-          <h2>WELCOME</h2>
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  const toggleDropdown = (key: keyof typeof dropdowns) => {
+    setDropdowns(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <div className={`app-wrapper ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <Navbar toggleSidebar={toggleSidebar} />
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        toggleSidebar={toggleSidebar}
+        dropdowns={dropdowns}
+        toggleDropdown={toggleDropdown}
+      />
+      <main className="main-content">
+        <div className="main-header">
+          <img src="/welcome.png" alt="Welcome" style={{ maxWidth: '300px' }} />
           <p>Chào mừng đến với cổng sinh viên HUTECH</p>
-        </header>
+        </div>
       </main>
+      <Footer />
     </div>
   );
 }

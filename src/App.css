@@ -1,63 +1,39 @@
-body {
+/* ===== Layout Tổng thể ===== */
+html, body {
+  height: 100%;
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background: #f0f2f5;
+  background-color: #f1f5f9;
 }
 
-.layout {
-  display: flex;
-  height: 100vh;
-}
-
-.sidebar {
-  width: 240px;
-  background: linear-gradient(to bottom, #1e3a8a, #2563eb);
-  color: white;
-  padding: 1.5rem 1rem;
-}
-
-.sidebar .logo {
-  font-weight: bold;
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
-}
-
-.menu {
-  list-style: none;
-  padding: 0;
-}
-
-.menu li {
-  padding: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.menu li:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.main {
-  flex: 1;
-  padding: 2rem;
-  background: #eaf0fa;
+.app-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  min-height: 100vh;
+  position: relative;
 }
 
-.main-header h2 {
-  font-size: 3rem;
-  color: #2563eb;
-  margin-bottom: 0.5rem;
+.main-content {
+  margin-top: 60px;
+  padding: 2rem;
+  transition: margin-left 0.3s;
+  z-index: 1;
+  flex: 1;
+}
+
+.main-header {
+  text-align: center;
 }
 
 .main-header p {
   font-size: 1.2rem;
-  color: #444;
+  color: #333;
+}
+
+footer {
+  background-color: #ffffff;
+  text-align: center;
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
 }
