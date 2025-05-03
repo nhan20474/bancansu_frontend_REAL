@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import './App.css';
-import Sidebar from './layouts/Sidebar';
-import Navbar from './layouts/Navbar';
-import Footer from './layouts/Footer';
-import Login from './user/login';
+import Sidebar from './layouts/pagelayouts/Sidebar';
+import Navbar from './layouts/pagelayouts/Navbar';
+import Footer from './layouts/pagelayouts/Footer';
+import Login from './layouts/user/login';
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdowns, setDropdowns] = useState({
     docs: false,
     forum: false,
     survey: false,
+    hutech: false,
     other: false,
   });
 

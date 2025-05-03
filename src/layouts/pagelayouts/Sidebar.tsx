@@ -1,6 +1,6 @@
 import React from 'react';
 import './Sidebar.css'; // Import your CSS file for styling
-type DropdownKey = 'docs' | 'forum' | 'survey' | 'other';
+type DropdownKey = 'docs' | 'forum' | 'survey' | 'other'| 'hutech';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -63,6 +63,25 @@ const Sidebar = (props: SidebarProps) => {
           <li><i className="fas fa-comments"></i> <span>Thảo luận</span></li>
           <li><i className="fas fa-lightbulb"></i> <span>Ý kiến đóng góp</span></li>
         </DropdownItem>
+        
+        <DropdownItem
+          icon="fas fa-university"
+          title="Hệ thống HUTECH"
+          isOpen={dropdowns.hutech}
+          onToggle={() => toggleDropdown('hutech')}
+        >
+          <li onClick={() => window.open('https://daotao.hutech.edu.vn', '_blank')}>
+            <i className="fas fa-check-circle"></i> <span>Web Đào tạo</span>
+          </li>
+          <li onClick={() => window.open('https://hocvudientu.hutech.edu.vn/', '_blank')}>
+            <i className="fas fa-poll"></i> <span>Web Học vụ</span>
+          </li>
+          <li onClick={() => window.open('https://sinhvien2.hutech.edu.vn/', '_blank')}>
+            <i className="fas fa-user-graduate"></i> <span>Web Sinh viên</span>
+          </li>
+        </DropdownItem>
+
+
 
         <DropdownItem
           icon="fas fa-clipboard-list"
@@ -73,8 +92,7 @@ const Sidebar = (props: SidebarProps) => {
           <li><i className="fas fa-check"></i> <span>Khảo sát môn học</span></li>
           <li><i className="fas fa-poll"></i> <span>Ý kiến sinh viên</span></li>
         </DropdownItem>
-
-        <li><i className="fas fa-check-circle"></i> <span>Rèn luyện</span></li>
+        {/* <li><i className="fas fa-check-circle"></i> <span>Rèn luyện</span></li> */}
         <DropdownItem
           icon="fas fa-ellipsis-h"
           title="Khác"

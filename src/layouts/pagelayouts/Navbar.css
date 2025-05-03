@@ -1,0 +1,104 @@
+.top-navbar {
+  height: 60px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* đổ bóng đều với sidebar */
+  /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); */
+
+}
+
+.toggle-btn {
+  font-size: 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.navbar-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-left: 1rem;
+  color: #1e3a8a;
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.icon-btn {
+  font-size: 1.2rem;
+  color: #1e3a8a;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Avatar + dropdown user */
+.avatar-wrapper {
+  position: relative;
+  cursor: pointer;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #ddd;
+  object-fit: cover;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  width: 260px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.user-info {
+  background: #2563eb;
+  color: white;
+  padding: 1rem;
+}
+
+.user-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.user-dropdown li {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.user-dropdown li.logout {
+  color: red;
+  font-weight: bold;
+}
+
+.user-dropdown li.disabled {
+  color: #aaa;
+  pointer-events: none;
+}
+
+.shortcut {
+  float: right;
+  font-size: 0.8rem;
+  color: #888;
+}
