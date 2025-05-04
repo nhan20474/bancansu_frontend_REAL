@@ -44,6 +44,43 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+------------------------------------------------------------------------------------------------------------------------
+Node js:
+https://nodejs.org/en/download
+Sử dụng cmd để kiểm tra kết quả:
+ ●Kiểm tra phiên bản node: node –version
+ ●Kiểm tra phiên bản: npm --version
+
+Cài đặt TypeScript compiler:
+ ● Sử dụng npm cài đặt TypeScript compiler:
+ ○ Cài đặt bản mới nhất: npm install --global typescript
+ ○ Cài đặt bản chỉ định: npm install --global 
+typescript@9.8.1
+ ● Kiểm tra phiên bản:
+ ○ tsc –-version
+Cài Maven:
+ ● Vs code: Tải plugin Maven về (Hiện cái j recommend thì tải) (Thắc mắc hỏi t ngay)
+ ● IntelliJ IDEA: click chuột vào mấy cái file nào thấy chữ maven rồi kiếm cái download maven (Download Sources vs Document)
+Cài dặt React:
+// Tạo dự án mới
+ npx create-react-app my
+app
+ // Khởi động dự án
+ cd my-app
+ npm start
+ // Thay đổi port
+ set PORT= số j m muốn & npm 
+start
+// Tạo dự án react typescript trong file mình
+npx create-react-app bcsproject_frontend typescript
+
+(npx create-react-app my app typescript)
+ // Khởi động dự án
+ cd my-app
+ npm start
+ // Thay đổi port (Để cho nó lành)
+ set PORT= số m muốn & npm start
+------------------------------------------------------------------------------------------------------------------------
 
 //CSDL nếu bọn m thích, ko thì build cái khác giùm
 -- =============================
