@@ -1,6 +1,8 @@
 import React from 'react';
-import './Sidebar.css'; // Import your CSS file for styling
-type DropdownKey = 'docs' | 'forum' | 'survey' | 'other'| 'hutech';
+import { Link } from 'react-router-dom'; // ✅ Thêm Link từ react-router-dom
+import './Sidebar.css';
+
+type DropdownKey = 'docs' | 'forum' | 'survey' | 'other' | 'hutech';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -21,16 +23,13 @@ const DropdownItem = ({ icon, title, isOpen, onToggle, children }: DropdownItemP
   <>
     <li onClick={onToggle} className="dropdown-toggle">
       <i className={icon}></i> <span>{title}</span>
-      {/* <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'} dropdown-icon`}></i> */}
       <i className={`${isOpen ? 'up' : 'down'} dropdown-icon`}></i>
     </li>
     {isOpen && <ul className="submenu">{children}</ul>}
   </>
 );
 
-const Sidebar = (props: SidebarProps) => {
-  const { sidebarOpen, toggleSidebar, dropdowns, toggleDropdown } = props;
-
+const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: SidebarProps) => {
   return (
     <aside className={`sidebar ${sidebarOpen ? 'active' : ''}`}>
       <div className="sidebar-header">
@@ -41,8 +40,19 @@ const Sidebar = (props: SidebarProps) => {
       </div>
 
       <ul className="menu">
-        <li><i className="fas fa-home"></i> <span>Trang chủ</span></li>
-        <li><i className="fas fa-user"></i> <span>Hồ sơ cá nhân</span></li>
+        {/* ✅ Trang chủ */}
+        <li>
+          <Link to="/" className="menu-link">
+            <i className="fas fa-home"></i> <span>Trang chủ</span>
+          </Link>
+        </li>
+
+        {/* ✅ Hồ sơ cá nhân */}
+        <li>
+          <Link to="/profile" className="menu-link">
+            <i className="fas fa-user"></i> <span>Hồ sơ cá nhân</span>
+          </Link>
+        </li>
 
         <DropdownItem
           icon="fas fa-book"
@@ -63,7 +73,7 @@ const Sidebar = (props: SidebarProps) => {
           <li><i className="fas fa-comments"></i> <span>Thảo luận</span></li>
           <li><i className="fas fa-lightbulb"></i> <span>Ý kiến đóng góp</span></li>
         </DropdownItem>
-        
+
         <DropdownItem
           icon="fas fa-university"
           title="Hệ thống HUTECH"
@@ -81,8 +91,6 @@ const Sidebar = (props: SidebarProps) => {
           </li>
         </DropdownItem>
 
-
-
         <DropdownItem
           icon="fas fa-clipboard-list"
           title="Khảo sát"
@@ -92,7 +100,7 @@ const Sidebar = (props: SidebarProps) => {
           <li><i className="fas fa-check"></i> <span>Khảo sát môn học</span></li>
           <li><i className="fas fa-poll"></i> <span>Ý kiến sinh viên</span></li>
         </DropdownItem>
-        {/* <li><i className="fas fa-check-circle"></i> <span>Rèn luyện</span></li> */}
+
         <DropdownItem
           icon="fas fa-ellipsis-h"
           title="Khác"
@@ -103,7 +111,12 @@ const Sidebar = (props: SidebarProps) => {
           <li><i className="fas fa-info-circle"></i> <span>Giới thiệu</span></li>
         </DropdownItem>
 
-        <li><i className="fas fa-cogs"></i> <span>Tài khoản</span></li>
+        {/* ✅ Tài khoản */}
+        <li>
+          <Link to="/account" className="menu-link">
+            <i className="fas fa-cogs"></i> <span>Tài khoản</span>
+          </Link>
+        </li>
       </ul>
     </aside>
   );

@@ -6,6 +6,7 @@ import Footer from './layouts/pagelayouts/Footer';
 import Homepage from './layouts/homepage/Homepage';
 import Login from './layouts/pages/Login';
 import { UserProvider } from './contexts/UserContext';
+import './App.css'; // chứa layout CSS chung
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -32,21 +33,29 @@ function App() {
 
   return (
     <UserProvider>
-      <div className={`app-wrapper ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <Navbar toggleSidebar={toggleSidebar} toggleFullscreen={toggleFullscreen} />
+      <div className="app-wrapper">
         <Sidebar
           sidebarOpen={sidebarOpen}
           toggleSidebar={toggleSidebar}
           dropdowns={dropdowns}
           toggleDropdown={toggleDropdown}
         />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Homepage />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
-        </main>
-        <Footer />
+
+        <div className="main-content">
+          <Navbar
+            toggleSidebar={toggleSidebar}
+            toggleFullscreen={toggleFullscreen}
+          />
+
+          <div className="main-body">
+            <Routes>
+              <Route path="/" element={<Homepage />} />
+              <Route path="/login" element={<Login />} />
+            </Routes>
+          </div>
+
+          <Footer />
+        </div>
       </div>
     </UserProvider>
   );

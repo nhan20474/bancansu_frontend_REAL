@@ -1,4 +1,3 @@
-/* File: src/components/Footer.tsx */
 
 function Footer() {
   return (
