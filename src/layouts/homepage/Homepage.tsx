@@ -1,6 +1,6 @@
 // File: HomePage.tsx
 import React from 'react';
-import './HomePage.css';
+import './Homepage.css';
 
 const HomePage = () => {
   return (

@@ -3,9 +3,7 @@ import './App.css';
 import Sidebar from './layouts/pagelayouts/Sidebar';
 import Navbar from './layouts/pagelayouts/Navbar';
 import Footer from './layouts/pagelayouts/Footer';
-import Login from './layouts/user/login';
-import HomePage from './layouts/homepage/Homepage';
-
+import Homepage from './layouts/homepage/Homepage';
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdowns, setDropdowns] = useState({
@@ -40,10 +38,7 @@ function App() {
         toggleDropdown={toggleDropdown}
       />
       <main className="main-content">
-        <div className="main-header">
-          <img src="/welcome.png" alt="Welcome" style={{ maxWidth: '300px' }} />
-          <p>Chào mừng đến với cổng sinh viên HUTECH</p>
-        </div>
+      <Homepage />
       </main>
       <Footer />
     </div>

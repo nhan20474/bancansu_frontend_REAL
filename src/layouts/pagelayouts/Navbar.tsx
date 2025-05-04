@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Navbar.css'; // Import your CSS file for styling
+
 interface NavbarProps {
   toggleSidebar: () => void;
   toggleFullscreen: () => void;
