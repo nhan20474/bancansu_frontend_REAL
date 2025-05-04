@@ -8,9 +8,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* đổ bóng đều với sidebar */
-  /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); */
-
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .toggle-btn {
@@ -21,20 +19,16 @@
 }
 
 .navbar-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: bold;
-  color: #1e3a8a;
-  padding-left: 1rem; /* khoảng cách với sidebar */
   font-size: 1.1rem;
+  font-weight: bold;
+  margin-left: 1rem;
+  color: #1e3a8a;
 }
-
 
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.2rem;
 }
 
 .icon-btn {
@@ -45,39 +39,42 @@
 }
 
 .icon-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
-/* Avatar + dropdown user */
+.login-link {
+  font-weight: bold;
+  color: #1e3a8a;
+  text-decoration: none;
+}
+
 .avatar-wrapper {
   position: relative;
   cursor: pointer;
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background-color: #ddd;
   object-fit: cover;
 }
 
 .user-dropdown {
   position: absolute;
-  top: 50px;
+  top: 110%;
   right: 0;
-  background: white;
-  width: 260px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  width: 240px;
+  z-index: 999;
   overflow: hidden;
 }
 
-.user-info {
-  background: #2563eb;
-  color: white;
+.user-dropdown .user-info {
   padding: 1rem;
+  border-bottom: 1px solid #eee;
 }
 
 .user-dropdown ul {
@@ -87,22 +84,26 @@
 }
 
 .user-dropdown li {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1rem;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
-.user-dropdown li.logout {
-  color: red;
-  font-weight: bold;
+.user-dropdown li:hover:not(.disabled) {
+  background-color: #f0f0f0;
 }
 
-.user-dropdown li.disabled {
+.user-dropdown .disabled {
   color: #aaa;
   pointer-events: none;
 }
 
+.user-dropdown .logout {
+  color: red;
+  font-weight: bold;
+}
+
 .shortcut {
   float: right;
-  font-size: 0.8rem;
-  color: #888;
+  color: #999;
 }

@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import './App.css';
-import Sidebar from './layouts/pagelayouts/Sidebar';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Navbar from './layouts/pagelayouts/Navbar';
+import Sidebar from './layouts/pagelayouts/Sidebar';
 import Footer from './layouts/pagelayouts/Footer';
 import Homepage from './layouts/homepage/Homepage';
+import Login from './layouts/pages/Login';
+import { UserProvider } from './contexts/UserContext';
+
 function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [dropdowns, setDropdowns] = useState({
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [dropdowns, setDropdowns] = React.useState({
     docs: false,
     forum: false,
     survey: false,
@@ -15,7 +18,6 @@ function App() {
   });
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
   const toggleDropdown = (key: keyof typeof dropdowns) => {
     setDropdowns(prev => ({ ...prev, [key]: !prev[key] }));
   };
@@ -29,19 +31,24 @@ function App() {
   };
 
   return (
-    <div className={`app-wrapper ${sidebarOpen ? 'sidebar-open' : ''}`}>
-      <Navbar toggleSidebar={toggleSidebar} toggleFullscreen={toggleFullscreen} />
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
-        dropdowns={dropdowns}
-        toggleDropdown={toggleDropdown}
-      />
-      <main className="main-content">
-      <Homepage />
-      </main>
-      <Footer />
-    </div>
+    <UserProvider>
+      <div className={`app-wrapper ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <Navbar toggleSidebar={toggleSidebar} toggleFullscreen={toggleFullscreen} />
+        <Sidebar
+          sidebarOpen={sidebarOpen}
+          toggleSidebar={toggleSidebar}
+          dropdowns={dropdowns}
+          toggleDropdown={toggleDropdown}
+        />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Homepage />} />
+            <Route path="/login" element={<Login />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </UserProvider>
   );
 }
 

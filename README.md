@@ -73,13 +73,14 @@ app
 start
 // Tạo dự án react typescript trong file mình
 npx create-react-app bcsproject_frontend typescript
-
+npm install react-router-dom
 (npx create-react-app my app typescript)
  // Khởi động dự án
  cd my-app
  npm start
  // Thay đổi port (Để cho nó lành)
  set PORT= số m muốn & npm start
+ 
 ------------------------------------------------------------------------------------------------------------------------
 
 //CSDL nếu bọn m thích, ko thì build cái khác giùm
