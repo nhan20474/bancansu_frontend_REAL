@@ -4,6 +4,8 @@ import Sidebar from './layouts/pagelayouts/Sidebar';
 import Navbar from './layouts/pagelayouts/Navbar';
 import Footer from './layouts/pagelayouts/Footer';
 import Login from './layouts/user/login';
+import HomePage from './layouts/homepage/Homepage';
+
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdowns, setDropdowns] = useState({
