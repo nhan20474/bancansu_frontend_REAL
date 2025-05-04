@@ -20,9 +20,17 @@ function App() {
     setDropdowns(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   return (
     <div className={`app-wrapper ${sidebarOpen ? 'sidebar-open' : ''}`}>
-      <Navbar toggleSidebar={toggleSidebar} />
+      <Navbar toggleSidebar={toggleSidebar} toggleFullscreen={toggleFullscreen} />
       <Sidebar
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
