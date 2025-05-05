@@ -1,4 +1,4 @@
-/* ===== Layout Tổng thể ===== */
+/* ===== Toàn bộ trang ===== */
 html, body {
   height: 100%;
   margin: 0;
@@ -6,24 +6,33 @@ html, body {
   background-color: #f1f5f9;
 }
 
+/* ===== Khung tổng ===== */
 .app-wrapper {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  position: relative;
+  background-color: #f1f5f9;
 }
 
+/* ===== Phần nội dung chính (trừ navbar/footer) ===== */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-top: 0px;
-  padding: 0;
   transition: margin-left 0.3s;
-  z-index: 1;
 }
 
+/* ===== Vùng chứa nội dung chính ===== */
+.main-body {
+  flex: 1;
+  padding: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: inherit;
+  min-height: calc(100vh - 120px); /* 60px navbar + 60px footer */
+}
 
+/* ===== Header nội dung ===== */
 .main-header {
   text-align: center;
 }
@@ -33,6 +42,7 @@ html, body {
   color: #333;
 }
 
+/* ===== Footer ===== */
 footer {
   background-color: #ffffff;
   text-align: center;
