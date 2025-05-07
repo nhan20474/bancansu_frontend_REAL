@@ -1,0 +1,81 @@
+/* src/layouts/pages/Page.css */
+
+.page-content {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    line-height: 1.8;
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  .page-content h1,
+  .page-content h2,
+  .page-content h3 {
+    color: #2c3e50;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+  
+  .page-content h1 {
+    font-size: 2rem;
+    text-align: center;
+  }
+  
+  .page-content h2 {
+    font-size: 1.75rem;
+  }
+  
+  .page-content h3 {
+    font-size: 1.5rem;
+  }
+  
+  .page-content p {
+    margin-bottom: 1rem;
+  }
+  
+  .page-content ul,
+  .page-content ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+  
+  .page-content a {
+    color: #3498db;
+    text-decoration: none;
+    border-bottom: 1px dashed #3498db;
+    transition: border-color 0.2s;
+  }
+  
+  .page-content a:hover {
+    border-color: transparent;
+  }
+  
+  .page-content blockquote {
+    margin: 1.5rem 0;
+    padding: 1rem 1.5rem;
+    border-left: 4px solid #3498db;
+    background: rgba(52, 152, 219, 0.05);
+    font-style: italic;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  
+  @media (max-width: 768px) {
+    .page-content {
+      padding: 1rem;
+      margin: 1rem;
+    }
+    .page-content h1 {
+      font-size: 1.5rem;
+    }
+  }
+  

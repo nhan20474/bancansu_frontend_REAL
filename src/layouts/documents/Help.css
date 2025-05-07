@@ -1,0 +1,14 @@
+/* src/layouts/documents/Help.css */
+
+.page.help-page {
+    padding: 1rem;
+  }
+  
+  .page.help-page h1 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .page-content {
+    line-height: 1.6;
+  }
+  

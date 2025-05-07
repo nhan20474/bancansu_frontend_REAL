@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom'; // ✅ Thêm Link từ react-router-dom
+import { Link } from 'react-router-dom';
 import './Sidebar.css';
 
 type DropdownKey = 'docs' | 'forum' | 'survey' | 'other' | 'hutech';
@@ -40,14 +40,12 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
       </div>
 
       <ul className="menu">
-        {/* ✅ Trang chủ */}
         <li>
           <Link to="/" className="menu-link">
             <i className="fas fa-home"></i> <span>Trang chủ</span>
           </Link>
         </li>
 
-        {/* ✅ Hồ sơ cá nhân */}
         <li>
           <Link to="/profile" className="menu-link">
             <i className="fas fa-user"></i> <span>Hồ sơ cá nhân</span>
@@ -60,8 +58,16 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           isOpen={dropdowns.docs}
           onToggle={() => toggleDropdown('docs')}
         >
-          <li><i className="fas fa-file-alt"></i> <span>Giáo trình</span></li>
-          <li><i className="fas fa-download"></i> <span>Tài liệu tải về</span></li>
+          <li>
+            <Link to="/textbooks" className="submenu-link">
+              <i className="fas fa-file-alt"></i> <span>Giáo trình</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/downloads" className="submenu-link">
+              <i className="fas fa-download"></i> <span>Tài liệu tải về</span>
+            </Link>
+          </li>
         </DropdownItem>
 
         <DropdownItem
@@ -70,8 +76,16 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           isOpen={dropdowns.forum}
           onToggle={() => toggleDropdown('forum')}
         >
-          <li><i className="fas fa-comments"></i> <span>Thảo luận</span></li>
-          <li><i className="fas fa-lightbulb"></i> <span>Ý kiến đóng góp</span></li>
+          <li>
+            <Link to="/forum/discussion" className="submenu-link">
+              <i className="fas fa-comments"></i> <span>Thảo luận</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/forum/feedback" className="submenu-link">
+              <i className="fas fa-lightbulb"></i> <span>Ý kiến đóng góp</span>
+            </Link>
+          </li>
         </DropdownItem>
 
         <DropdownItem
@@ -97,8 +111,16 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           isOpen={dropdowns.survey}
           onToggle={() => toggleDropdown('survey')}
         >
-          <li><i className="fas fa-check"></i> <span>Khảo sát môn học</span></li>
-          <li><i className="fas fa-poll"></i> <span>Ý kiến sinh viên</span></li>
+          <li>
+            <Link to="/survey/course" className="submenu-link">
+              <i className="fas fa-check"></i> <span>Khảo sát môn học</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/survey/feedback" className="submenu-link">
+              <i className="fas fa-poll"></i> <span>Ý kiến sinh viên</span>
+            </Link>
+          </li>
         </DropdownItem>
 
         <DropdownItem
@@ -107,11 +129,18 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           isOpen={dropdowns.other}
           onToggle={() => toggleDropdown('other')}
         >
-          <li><i className="fas fa-question-circle"></i> <span>Trợ giúp</span></li>
-          <li><i className="fas fa-info-circle"></i> <span>Giới thiệu</span></li>
+          <li>
+            <Link to="/help" className="submenu-link">
+              <i className="fas fa-question-circle"></i> <span>Trợ giúp</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/about" className="submenu-link">
+              <i className="fas fa-info-circle"></i> <span>Giới thiệu</span>
+            </Link>
+          </li>
         </DropdownItem>
 
-        {/* ✅ Tài khoản */}
         <li>
           <Link to="/account" className="menu-link">
             <i className="fas fa-cogs"></i> <span>Tài khoản</span>
