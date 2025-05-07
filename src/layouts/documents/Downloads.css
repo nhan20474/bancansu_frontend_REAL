@@ -1,57 +1,55 @@
-.downloads-page {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-  }
-  .downloads-page h2 {
-    color: #1e3a8a;
-    margin-bottom: 1rem;
-  }
-  .downloads-list {
-    list-style: none;
-    padding: 0;
-  }
-  .download-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #fff;
-    margin-bottom: 0.75rem;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
-  .dl-title {
-    margin: 0;
-    font-weight: bold;
-    color: #333;
-  }
-  .dl-date {
-    margin: 0.25rem 0 0;
-    font-size: 0.85rem;
-    color: #666;
-  }
-  .dl-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  .download-btn {
-    background: #10b981;
-    color: #fff;
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    text-decoration: none;
-  }
-  .remove-btn {
-    background: #ef4444;
-    color: #fff;
-    border: none;
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  .error {
-    color: #c00;
-    text-align: center;
-  }
-  
+/* src/pages/Download.css */
+.download-container {
+  padding: 2rem;
+  background-color: #f9fafb;
+  max-width: 1000px;
+  margin: 0 auto;
+  color: #1f2937;
+}
+
+.download-container h1 {
+  font-size: 2rem;
+  color: #1e3a8a;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.download-list {
+  list-style: none;
+  padding: 0;
+}
+
+.download-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-left: 4px solid #1d4ed8;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.file-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.file-info p {
+  margin: 0;
+  color: #4b5563;
+}
+
+.download-btn {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.download-btn:hover {
+  background-color: #1d4ed8;
+}

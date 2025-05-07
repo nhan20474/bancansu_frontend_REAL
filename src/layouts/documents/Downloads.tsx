@@ -1,51 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import axios, { AxiosResponse } from 'axios';
+// src/pages/Download.tsx
+import React from 'react';
 import './Downloads.css';
 
-interface DownloadRecord {
+interface FileItem {
   id: number;
-  title: string;
-  file_url: string;
-  downloaded_at: string;
+  name: string;
+  description: string;
+  fileUrl: string;
 }
 
-const Downloads: React.FC = () => {
-  const [list, setList] = useState<DownloadRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string|null>(null);
+const mockFiles: FileItem[] = [
+  {
+    id: 1,
+    name: 'Bài giảng Cơ sở dữ liệu',
+    description: 'File PDF tổng hợp bài giảng tuần 1-4.',
+    fileUrl: '/files/csdl_baigiang.pdf',
+  },
+  {
+    id: 2,
+    name: 'Đề cương môn Mạng máy tính',
+    description: 'Tài liệu chuẩn bị cho kỳ thi giữa kỳ.',
+    fileUrl: '/files/decuong_mmt.pdf',
+  },
+  {
+    id: 3,
+    name: 'Slide bài giảng Lập trình Web',
+    description: 'File trình chiếu tuần 5-6.',
+    fileUrl: '/files/laptrinhweb_slide.pptx',
+  },
+];
 
-  const fetchList = () => {
-    axios.get<DownloadRecord[]>('/api/downloads.php')
-      .then((res: AxiosResponse<DownloadRecord[]>) => setList(res.data))
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(fetchList, []);
-
-  const remove = (id: number) => {
-    axios.delete(`/api/downloads.php?id=${id}`)
-      .then(() => setList(list.filter(item => item.id !== id)))
-      .catch(err => alert('Xóa thất bại: ' + err.message));
-  };
-
-  if (loading) return <div className="downloads-page">Đang tải lịch sử…</div>;
-  if (error)   return <div className="downloads-page error">Lỗi: {error}</div>;
-
+const Download: React.FC = () => {
   return (
-    <div className="downloads-page">
-      <h2>Tài liệu đã tải về</h2>
-      <ul className="downloads-list">
-        {list.map(d => (
-          <li key={d.id} className="download-item">
-            <div>
-              <p className="dl-title">{d.title}</p>
-              <p className="dl-date">{new Date(d.downloaded_at).toLocaleString()}</p>
+    <div className="download-container">
+      <h1>Tài liệu tải về</h1>
+      <ul className="download-list">
+        {mockFiles.map(file => (
+          <li key={file.id} className="download-item">
+            <div className="file-info">
+              <h3>{file.name}</h3>
+              <p>{file.description}</p>
             </div>
-            <div className="dl-actions">
-              <a href={d.file_url} download className="download-btn">Tải lại</a>
-              <button onClick={() => remove(d.id)} className="remove-btn">Xóa</button>
-            </div>
+            <a href={file.fileUrl} download className="download-btn">
+              <i className="fas fa-download"></i> Tải về
+            </a>
           </li>
         ))}
       </ul>
@@ -53,4 +51,4 @@ const Downloads: React.FC = () => {
   );
 };
 
-export default Downloads;
+export default Download;

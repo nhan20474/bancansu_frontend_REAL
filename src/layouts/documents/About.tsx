@@ -1,28 +1,34 @@
-// src/layouts/documents/About.tsx
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './About.css';  // tạo file CSS nếu cần
+// src/pages/About.tsx
+import React from 'react';
+import './About.css';
 
 const About: React.FC = () => {
-  const [page, setPage] = useState<{ title: string; content: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    axios.get('/api/pages.php?page=about')
-      .then(res => setPage(res.data))
-      .catch(err => setError(err.response?.data?.error || err.message));
-  }, []);
-
-  if (error) return <div className="page error">Lỗi: {error}</div>;
-  if (!page) return <div className="page loading">Đang tải giới thiệu…</div>;
-
   return (
-    <div className="page about-page">
-      <h1>{page.title}</h1>
-      <div 
-        className="page-content" 
-        dangerouslySetInnerHTML={{ __html: page.content }}
-      />
+    <div className="about-container">
+      <h1>Giới thiệu về hệ thống</h1>
+
+      <section className="about-section">
+        <h2>🎯 Mục tiêu</h2>
+        <p>
+          CLASS MANAGER là hệ thống hỗ trợ quản lý lớp học hiện đại cho sinh viên, ban cán sự và giảng viên tại HUTECH.
+          Hệ thống giúp đơn giản hóa việc tổ chức tài liệu, quản lý nhóm, theo dõi nhiệm vụ, và giao tiếp nội bộ.
+        </p>
+      </section>
+
+      <section className="about-section">
+        <h2>👨‍💻 Nhóm phát triển</h2>
+        <ul>
+          <li>Lê Thành Nhân – Frontend Developer</li>
+          <li>Lê Hoàng Danh – UI/UX Designer</li>
+          <li>Nguyễn Thành Nhân – Backend Developer</li>
+        </ul>
+      </section>
+
+      <section className="about-section">
+        <h2>📫 Liên hệ</h2>
+        <p>📧 Email: support@classmanager.edu.vn</p>
+        <p>🏫 Địa chỉ: Lớp 22DTHE3. Trường Đại học Công Nghệ TP.HCM</p>
+      </section>
     </div>
   );
 };

@@ -1,75 +1,57 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+// src/pages/Textbook.tsx
+import React, { useState, useMemo } from 'react';
 import './Textbooks.css';
 
 interface Textbook {
   id: number;
   title: string;
-  author?: string;
-  subject?: string;
-  file_url: string;
+  subject: string;
+  author: string;
+  fileUrl: string;
 }
 
-const API_BASE = 'http://localhost:8080/bcsproject_backend/app/public/api';
+const mockTextbooks: Textbook[] = [
+  {
+    id: 1,
+    title: 'Cơ sở dữ liệu căn bản',
+    subject: 'Cơ sở dữ liệu',
+    author: 'Nguyễn Văn A',
+    fileUrl: '/files/csdl.pdf',
+  },
+  {
+    id: 2,
+    title: 'Lập trình Web nâng cao',
+    subject: 'Lập trình',
+    author: 'Trần Thị B',
+    fileUrl: '/files/webdev.pdf',
+  },
+  {
+    id: 3,
+    title: 'Mạng máy tính',
+    subject: 'Mạng',
+    author: 'Lê Văn C',
+    fileUrl: '/files/mmt.pdf',
+  },
+];
 
-const Textbooks: React.FC = () => {
-  const [books, setBooks] = useState<Textbook[]>([]);
-  const [subjects, setSubjects] = useState<string[]>([]);
+const Textbook: React.FC = () => {
   const [search, setSearch] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch dữ liệu từ API
-  const fetchTextbooks = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get<Textbook[]>(`${API_BASE}/textbooks.php`);
-      console.log('API trả về:', res.data);
-
-      // Kiểm tra định dạng dữ liệu
-      if (!Array.isArray(res.data)) {
-        console.error('API trả về không phải mảng:', res.data);
-        setError('Dữ liệu giáo trình không hợp lệ');
-        return;
-      }
-
-      const data = res.data;
-      setBooks(data);
-
-      // Tạo danh sách môn học duy nhất
-      const uniq = Array.from(
-        new Set(
-          data.map(b => b.subject).filter((s): s is string => !!s)
-        )
-      );
-      setSubjects(uniq);
-    } catch (err: any) {
-      console.error('Lỗi khi fetch giáo trình:', err.response || err);
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTextbooks();
+  const subjects = useMemo(() => {
+    return Array.from(new Set(mockTextbooks.map(tb => tb.subject)));
   }, []);
 
-  // Tính filtered array
-  const filtered = useMemo(() => {
-    const source = Array.isArray(books) ? books : [];
-    return source
-      .filter(b => !search || b.title.toLowerCase().includes(search.toLowerCase()))
-      .filter(b => !subjectFilter || b.subject === subjectFilter);
-  }, [books, search, subjectFilter]);
-
-  if (loading) return <div className="textbooks-page">Đang tải giáo trình…</div>;
-  if (error) return <div className="textbooks-page error">Lỗi: {error}</div>;
+  const filteredTextbooks = useMemo(() => {
+    return mockTextbooks
+      .filter(tb => tb.title.toLowerCase().includes(search.toLowerCase()))
+      .filter(tb => !subjectFilter || tb.subject === subjectFilter);
+  }, [search, subjectFilter]);
 
   return (
-    <div className="textbooks-page">
-      <h2>Giáo trình</h2>
+    <div className="textbook-container">
+      <h1>Giáo trình học tập</h1>
+
       <div className="filters">
         <input
           type="text"
@@ -81,33 +63,29 @@ const Textbooks: React.FC = () => {
           value={subjectFilter}
           onChange={e => setSubjectFilter(e.target.value)}
         >
-          <option value="">Tất cả môn</option>
-          {subjects.map(s => (
-            <option key={s} value={s}>{s}</option>
+          <option value="">Tất cả môn học</option>
+          {subjects.map(subject => (
+            <option key={subject} value={subject}>{subject}</option>
           ))}
         </select>
       </div>
 
-      {filtered.length === 0 ? (
-        <p className="no-results">Không tìm thấy giáo trình nào.</p>
-      ) : (
-        <ul className="textbook-list">
-          {filtered.map(b => (
-            <li key={b.id} className="textbook-item">
-              <div>
-                <p className="book-title">{b.title}</p>
-                {b.author && <p className="book-author">Tác giả: {b.author}</p>}
-                {b.subject && <p className="book-subject">Môn: {b.subject}</p>}
-              </div>
-              <a href={b.file_url} download className="download-btn">
-                Tải về
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="textbook-list">
+        {filteredTextbooks.map(tb => (
+          <li key={tb.id} className="textbook-item">
+            <div>
+              <h3>{tb.title}</h3>
+              <p><strong>Môn học:</strong> {tb.subject}</p>
+              <p><strong>Tác giả:</strong> {tb.author}</p>
+            </div>
+            <a href={tb.fileUrl} download className="download-btn">
+              <i className="fas fa-download"></i> Tải xuống
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
 
-export default Textbooks;
+export default Textbook;

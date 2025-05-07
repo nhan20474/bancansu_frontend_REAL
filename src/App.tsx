@@ -5,6 +5,11 @@ import Sidebar from './layouts/pagelayouts/Sidebar';
 import Footer from './layouts/pagelayouts/Footer';
 import Homepage from './layouts/homepage/Homepage';
 import Login from './layouts/pages/Login';
+import Help from './layouts/documents/Help';
+import About from './layouts/documents/About';
+import Downloads from './layouts/documents/Downloads';
+import Textbooks from './layouts/documents/Textbooks';
+import Discussion from './layouts/forum/Discussion';
 import { UserProvider } from './contexts/UserContext';
 import './App.css'; // chứa layout CSS chung
 
@@ -51,6 +56,12 @@ function App() {
             <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/downloads" element={<Downloads />} />
+              <Route path="/textbooks" element={<Textbooks />} />
+              <Route path="/discussion" element={<Discussion />} />
+              {/* Thêm các route khác tại đây */}
             </Routes>
           </div>
 
