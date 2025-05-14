@@ -1,31 +1,50 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../contexts/UserContext';
+import './Login.css';
 
-const Login: React.FC = () => {
-    const [mssv, setMssv] = useState('');
-    const [password, setPassword] = useState('');
+const Login = () => {
+  const { setUser } = useUser();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-    const handleLogin = async () => {
-        try {
-            const response = await axios.post('http://localhost/bcsproject_backend/app/public/api/auth/login.php', {
-                mssv,
-                password,
-            });
-            localStorage.setItem('token', response.data.token);
-            alert('Login successful');
-        } catch (error: any) {
-            alert(error.response?.data?.error || 'Login failed');
-        }
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const mockUser = {
+      name: 'Nguyễn Văn A',
+      email,
+      avatar: '/avatar-placeholder.png',
     };
 
-    return (
-        <div>
-            <h1>Login</h1>
-            <input type="text" placeholder="MSSV" value={mssv} onChange={(e) => setMssv(e.target.value)} />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button onClick={handleLogin}>Login</button>
-        </div>
-    );
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    setUser(mockUser);
+    navigate('/'); // quay về trang chủ
+  };
+
+  return (
+    <div className="login-container">
+      <form className="login-form" onSubmit={handleLogin}>
+        <h2>Đăng nhập</h2>
+        <input
+          type="email"
+          placeholder="Email..."
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Mật khẩu..."
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <button type="submit">Đăng nhập</button>
+      </form>
+    </div>
+  );
 };
 
 export default Login;

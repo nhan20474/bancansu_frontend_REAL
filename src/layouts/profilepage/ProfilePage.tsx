@@ -1,6 +1,6 @@
 // src/layouts/user/profile.tsx
 import React from 'react';
-import './profile.css';
+import './ProfilePage.css';
 
 const mockUser = {
   name: 'Lê Hoàng Danh',

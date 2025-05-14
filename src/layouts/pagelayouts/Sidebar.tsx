@@ -47,7 +47,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
         </li>
 
         <li>
-          <Link to="/profile" className="menu-link">
+          <Link to="/profilepage" className="menu-link">
             <i className="fas fa-user"></i> <span>Hồ sơ cá nhân</span>
           </Link>
         </li>
