@@ -1,5 +1,5 @@
 class UserModel {
-  public userId: number;
+  public userId: number; // đã có userId
   public studentId: string;
   public fullName: string;
   public email: string;

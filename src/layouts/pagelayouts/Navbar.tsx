@@ -42,6 +42,9 @@ const Navbar = ({ toggleSidebar, toggleFullscreen }: NavbarProps) => {
                 <div className="user-info">
                   <strong>{user.name}</strong>
                   <p>{user.email}</p>
+                  <p style={{fontSize: '0.85em', color: '#888'}}>
+                    ID: {user.userId ?? 'Không có userId'}
+                  </p>
                 </div>
                 <ul>
                   <li className="disabled">Tài khoản</li>

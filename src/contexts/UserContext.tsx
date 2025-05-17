@@ -3,6 +3,7 @@ import { useHistory } from 'react-router-dom';
 
 // 🎯 Kiểu dữ liệu người dùng
 export interface User {
+  userId: number; // thêm userId
   name: string;
   email: string;
   avatar?: string;
@@ -28,7 +29,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        if (!parsedUser.avatar) {
+          parsedUser.avatar = '/avatar-placeholder.png'; // avatar mặc định
+        }
+        setUser(parsedUser);
       } catch (error) {
         console.error('Lỗi khi đọc user từ localStorage:', error);
       }

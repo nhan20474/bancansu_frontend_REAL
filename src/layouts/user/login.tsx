@@ -17,13 +17,15 @@ const Login = () => {
     try {
       const res = await axios.post('/auth/login', { username, password });
       const data = res.data;
+      if (!data.MaNguoiDung) {
+        setError('Đăng nhập thành công nhưng thiếu userId (MaNguoiDung) từ backend.');
+        return;
+      }
       const user = {
-        id: data.MaNguoiDung,
-        username: data.username,
-        name: data.name,
+        userId: data.MaNguoiDung,
+        name: data.HoTen,
         email: data.Email,
-        role: data.role,
-        phone: data.SoDienThoai,
+        avatar: data.avatar || '/avatar-placeholder.png'
       };
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);

@@ -24,15 +24,16 @@ const Profile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.userId) {
       history.replace('/login');
       return;
     }
-    // Không cần truyền userId qua header nếu backend lấy từ token, chỉ truyền nếu backend yêu cầu
-    axios.get('/user/profile')
+    // Gửi userId lên backend qua query string
+    axios.get(`/user/profile?userId=${user.userId}`)
       .then(res => {
         setProfile(res.data);
         setLoading(false);
+        console.log('Profile data:', res.data); // Xem giá trị TrangThai trả về
       })
       .catch(err => {
         console.error('Lỗi tải hồ sơ:', err, err.response?.data);
@@ -48,11 +49,11 @@ const Profile: React.FC = () => {
       });
   }, [user, history]);
 
-  if (!user) {
+  if (!user || !user.userId) {
     return (
       <div className="profile-page">
         <div style={{ color: 'red', textAlign: 'center', marginTop: '2rem' }}>
-          Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.
+          Không tìm thấy thông tin người dùng hoặc thiếu userId. Vui lòng đăng nhập lại.
         </div>
       </div>
     );
@@ -86,7 +87,7 @@ const Profile: React.FC = () => {
           <p><strong>MSSV:</strong> {profile.MaSoSV}</p>
           <p><strong>SĐT:</strong> {profile.SoDienThoai}</p>
           <p><strong>Vai trò:</strong> {profile.VaiTro}</p>
-          <p><strong>Trạng thái:</strong> {profile.TrangThai ? 'Hoạt động' : 'Khóa'}</p>
+          <p><strong>Trạng thái:</strong> {profile.TrangThai ? 'Đang hoạt động' : 'Khóa'}</p>
         </div>
       </div>
     </div>
