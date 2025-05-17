@@ -1,15 +1,20 @@
 import axios from 'axios';
 
+// Tạo một instance axios với cấu hình mặc định cho toàn bộ dự án
 const instance = axios.create({
-  baseURL: '/api',
-  headers: { 'Content-Type': 'application/json' }
+  baseURL: 'http://localhost:8080/api', // Địa chỉ gốc của API backend
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
-// thêm interceptor để đính token
-instance.interceptors.request.use(cfg => {
-  const tok = localStorage.getItem('token');
-  if (tok) cfg.headers.Authorization = `Bearer ${tok}`;
-  return cfg;
+// Interceptor: Tự động đính kèm token vào header Authorization nếu có trong localStorage
+instance.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default instance;

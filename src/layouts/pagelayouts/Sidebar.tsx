@@ -52,6 +52,26 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           </Link>
         </li>
 
+        {/* Thêm liên kết danh sách lớp học */}
+        <li>
+          <Link to="/classes" className="menu-link">
+            <i className="fas fa-chalkboard"></i> <span>Danh sách lớp học</span>
+          </Link>
+        </li>
+
+        {/* Liên kết danh sách cán sự (lấy từ /api/cansu) */}
+        <li>
+          <Link to="/cansu" className="menu-link">
+            <i className="fas fa-users"></i> <span>Danh sách cán sự</span>
+          </Link>
+        </li>
+
+        <li>
+          <Link to="/notifications" className="menu-link">
+            <i className="fas fa-bell"></i> <span>Danh sách thông báo</span>
+          </Link>
+        </li>
+
         <DropdownItem
           icon="fas fa-book"
           title="Tài liệu"

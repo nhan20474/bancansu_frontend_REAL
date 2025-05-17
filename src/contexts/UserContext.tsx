@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 // 🎯 Kiểu dữ liệu người dùng
 export interface User {
@@ -21,7 +21,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 // ✅ Provider bọc quanh App
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | undefined>();
-  const navigate = useNavigate();
+  const history = useHistory();
 
   // 🔁 Khi load: lấy user từ localStorage nếu có
   useEffect(() => {
@@ -39,7 +39,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem('user');
     setUser(undefined);
-    navigate('/login'); // chuyển hướng về trang đăng nhập
+    history.push('/login'); // chuyển hướng về trang đăng nhập
   };
 
   return (

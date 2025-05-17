@@ -3,6 +3,16 @@ import React from 'react';
 import './Homepage.css';
 
 const HomePage = () => {
+  const handleReminderClick = () => {
+    // Add your handler logic here
+    console.log('Reminder clicked');
+  };
+
+  const handleScheduleClick = () => {
+    // Add your handler logic here
+    console.log('Schedule clicked');
+  };
+
   return (
     <div className="homepage-container">
       <h2 className="welcome-text">Chào mừng đến với cổng sinh viên HUTECH</h2>
@@ -24,14 +34,18 @@ const HomePage = () => {
         <div className="card reminder">
           <h4>Nhắc nhở mới, chưa xem</h4>
           <p className="count">17</p>
-          <a href="#">Xem chi tiết</a>
+          <button type="button" onClick={handleReminderClick}>
+            Xem chi tiết
+          </button>
         </div>
 
         {/* Lịch học */}
         <div className="card schedule">
           <h4>Lịch học trong tuần</h4>
           <p className="count">0</p>
-          <a href="#">Xem chi tiết</a>
+          <button type="button" onClick={handleScheduleClick}>
+            Xem chi tiết
+          </button>
         </div>
 
         {/* Thông báo chung */}

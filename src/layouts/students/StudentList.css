@@ -1,0 +1,34 @@
+.student-list-page {
+  max-width: 900px;
+  margin: 2rem auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 2rem;
+}
+
+.student-list-page h2 {
+  text-align: center;
+  color: #1e3a8a;
+  margin-bottom: 1.5rem;
+}
+
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.student-table th, .student-table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.student-table th {
+  background: #f1f5f9;
+  color: #1e3a8a;
+}
+
+.student-table tr:nth-child(even) {
+  background: #f9fafb;
+}

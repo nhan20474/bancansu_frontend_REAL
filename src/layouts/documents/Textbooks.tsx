@@ -2,15 +2,15 @@
 import React, { useState, useMemo } from 'react';
 import './Textbooks.css';
 
-interface Textbook {
+type TextbookType = {
   id: number;
   title: string;
   subject: string;
   author: string;
   fileUrl: string;
-}
+};
 
-const mockTextbooks: Textbook[] = [
+const mockTextbooks: TextbookType[] = [
   {
     id: 1,
     title: 'Cơ sở dữ liệu căn bản',
