@@ -3,12 +3,14 @@ import { useHistory } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import axios from '../../api/axiosConfig';
 import './login.css';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Nếu bạn bị lỗi icon, có thể thay bằng emoji 👁️/🙈
 
 const Login = () => {
   const { setUser } = useUser();
   const history = useHistory();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -18,7 +20,7 @@ const Login = () => {
       const res = await axios.post('/auth/login', { username, password });
       const data = res.data;
       if (!data.MaNguoiDung) {
-        setError('Đăng nhập thành công nhưng thiếu userId (MaNguoiDung) từ backend.');
+        setError('Thiếu thông tin người dùng.');
         return;
       }
       const user = {
@@ -31,19 +33,17 @@ const Login = () => {
       setUser(user);
       history.push('/');
     } catch (err: any) {
-      console.error('Đăng nhập lỗi:', err, err.response?.data);
-      setError(
-        err.response?.data?.message ||
-        'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.'
-      );
+      console.error('Đăng nhập lỗi:', err);
+      setError(err.response?.data?.message || 'Sai tên đăng nhập hoặc mật khẩu.');
     }
   };
 
   return (
     <div className="login-container">
-      <form className="login-form form-standard" onSubmit={handleLogin}>
+      <form className="login-form" onSubmit={handleLogin}>
         <h2>Đăng nhập</h2>
         {error && <div className="form-error">{error}</div>}
+
         <div className="form-group">
           <label htmlFor="username">Tên đăng nhập</label>
           <input
@@ -57,19 +57,35 @@ const Login = () => {
             autoComplete="username"
           />
         </div>
-        <div className="form-group">
+
+        <div className="form-group password-group">
           <label htmlFor="password">Mật khẩu</label>
-          <input
-            id="password"
-            type="password"
-            className="form-input"
-            placeholder="Mật khẩu..."
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
+          <div className="password-wrapper">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              className="form-input"
+              placeholder="Mật khẩu..."
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              className="toggle-password"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+              {/* Nếu lỗi icon: thay bằng {showPassword ? '🙈' : '👁️'} */}
+            </button>
+          </div>
         </div>
+
+        <div className="form-links">
+          <a href="/forgot-password">Quên mật khẩu?</a>
+        </div>
+
         <button type="submit" className="form-btn">Đăng nhập</button>
       </form>
     </div>

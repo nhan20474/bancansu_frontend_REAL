@@ -11,6 +11,8 @@
   padding: 0;
   transition: left 0.3s ease-in-out;
   user-select: none;
+  display: flex;                /* Thêm dòng này */
+  flex-direction: column;       /* Thêm dòng này */
 }
 
 .sidebar.active {
@@ -28,6 +30,8 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   z-index: 2;
   margin-bottom: 0;
+  position: sticky; /* Thêm dòng này */
+  top: 0;           /* Và dòng này */
 }
 
 .logo {
@@ -52,6 +56,9 @@
   list-style: none;
   padding: 1rem;
   margin: 0;
+  overflow-y: auto;             /* Thêm dòng này */
+  flex: 1;                      /* Thêm dòng này */
+  min-height: 0;                /* Thêm dòng này để flexbox cuộn đúng */
 }
 
 .menu li {

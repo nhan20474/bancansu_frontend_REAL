@@ -46,12 +46,6 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           </Link>
         </li>
 
-        <li>
-          <Link to="/profilepage" className="menu-link">
-            <i className="fas fa-user"></i> <span>Hồ sơ cá nhân</span>
-          </Link>
-        </li>
-
         {/* Thêm liên kết danh sách lớp học */}
         <li>
           <Link to="/classes" className="menu-link">
@@ -63,12 +57,6 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
         <li>
           <Link to="/cansu" className="menu-link">
             <i className="fas fa-users"></i> <span>Danh sách cán sự</span>
-          </Link>
-        </li>
-
-        <li>
-          <Link to="/notifications" className="menu-link">
-            <i className="fas fa-bell"></i> <span>Danh sách thông báo</span>
           </Link>
         </li>
 
@@ -161,11 +149,13 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           </li>
         </DropdownItem>
 
+        {/* GỘP hai mục này thành một */}
         <li>
-          <Link to="/account" className="menu-link">
-            <i className="fas fa-cogs"></i> <span>Tài khoản</span>
+          <Link to="/profilepage" className="menu-link">
+            <i className="fas fa-user"></i> <span>Tài khoản</span>
           </Link>
         </li>
+
       </ul>
     </aside>
   );
