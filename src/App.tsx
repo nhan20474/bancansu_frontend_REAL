@@ -7,9 +7,8 @@ import Homepage from './layouts/homepage/Homepage';
 import Login from './layouts/user/login';
 import Help from './layouts/documents/Help';
 import About from './layouts/documents/About';
-import Downloads from './layouts/documents/Downloads';
-import Textbooks from './layouts/documents/Textbooks';
-import Discussion from './layouts/forum/Discussion';
+import FeedbackPage from './layouts/forum/FeedbackPage';
+import ReportsPage from './layouts/reports/ReportsPage'; // Thêm dòng này
 import ProfilePage from './layouts/profilepage/ProfilePage';
 import ClassList from './layouts/classes/ClassList';
 import StudentList from './layouts/students/StudentList';
@@ -21,9 +20,6 @@ import './App.css';
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [dropdowns, setDropdowns] = React.useState({
-    docs: false,
-    forum: false,
-    survey: false,
     hutech: false,
     other: false,
   });
@@ -74,9 +70,8 @@ function AppContent() {
             <Route path="/login" component={Login} />
             <Route path="/help" component={Help} />
             <Route path="/about" component={About} />
-            <Route path="/downloads" component={Downloads} />
-            <Route path="/textbooks" component={Textbooks} />
-            <Route path="/discussion" component={Discussion} />
+            <Route path="/feedback" component={FeedbackPage} />
+            <Route path="/reports" component={ReportsPage} /> {/* Thêm dòng này */}
             <Route path="/profilepage" component={ProfilePage} />
             <Route path="/classes" component={ClassList} />
             <Route path="/students" component={StudentList} />

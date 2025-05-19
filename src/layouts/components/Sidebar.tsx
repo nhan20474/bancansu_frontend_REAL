@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './Sidebar.css';
 
-type DropdownKey = 'docs' | 'forum' | 'survey' | 'other' | 'hutech';
+type DropdownKey = 'other' | 'hutech';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -46,55 +46,35 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           </Link>
         </li>
 
-        {/* Thêm liên kết danh sách lớp học */}
         <li>
           <Link to="/classes" className="menu-link">
             <i className="fas fa-chalkboard"></i> <span>Danh sách lớp học</span>
           </Link>
         </li>
 
-        {/* Liên kết danh sách cán sự (lấy từ /api/cansu) */}
         <li>
           <Link to="/cansu" className="menu-link">
             <i className="fas fa-users"></i> <span>Danh sách cán sự</span>
           </Link>
         </li>
 
-        <DropdownItem
-          icon="fas fa-book"
-          title="Tài liệu"
-          isOpen={dropdowns.docs}
-          onToggle={() => toggleDropdown('docs')}
-        >
-          <li>
-            <Link to="/textbooks" className="submenu-link">
-              <i className="fas fa-file-alt"></i> <span>Giáo trình</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/downloads" className="submenu-link">
-              <i className="fas fa-download"></i> <span>Tài liệu tải về</span>
-            </Link>
-          </li>
-        </DropdownItem>
+        <li>
+          <Link to="/tasks" className="menu-link">
+            <i className="fas fa-tasks"></i> <span>Nhiệm vụ</span>
+          </Link>
+        </li>
 
-        <DropdownItem
-          icon="fas fa-users"
-          title="Diễn đàn"
-          isOpen={dropdowns.forum}
-          onToggle={() => toggleDropdown('forum')}
-        >
-          <li>
-            <Link to="/forum/discussion" className="submenu-link">
-              <i className="fas fa-comments"></i> <span>Thảo luận</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/forum/feedback" className="submenu-link">
-              <i className="fas fa-lightbulb"></i> <span>Ý kiến đóng góp</span>
-            </Link>
-          </li>
-        </DropdownItem>
+        <li>
+          <Link to="/feedback" className="menu-link">
+            <i className="fas fa-comment-dots"></i> <span>Đánh giá & góp ý</span>
+          </Link>
+        </li>
+
+        <li>
+          <Link to="/reports" className="menu-link">
+            <i className="fas fa-chart-bar"></i> <span>Thống kê & báo cáo</span>
+          </Link>
+        </li>
 
         <DropdownItem
           icon="fas fa-university"
@@ -110,24 +90,6 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           </li>
           <li onClick={() => window.open('https://sinhvien2.hutech.edu.vn/', '_blank')}>
             <i className="fas fa-user-graduate"></i> <span>Web Sinh viên</span>
-          </li>
-        </DropdownItem>
-
-        <DropdownItem
-          icon="fas fa-clipboard-list"
-          title="Khảo sát"
-          isOpen={dropdowns.survey}
-          onToggle={() => toggleDropdown('survey')}
-        >
-          <li>
-            <Link to="/survey/course" className="submenu-link">
-              <i className="fas fa-check"></i> <span>Khảo sát môn học</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/survey/feedback" className="submenu-link">
-              <i className="fas fa-poll"></i> <span>Ý kiến sinh viên</span>
-            </Link>
           </li>
         </DropdownItem>
 
@@ -149,13 +111,11 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, dropdowns, toggleDropdown }: Side
           </li>
         </DropdownItem>
 
-        {/* GỘP hai mục này thành một */}
         <li>
           <Link to="/profilepage" className="menu-link">
             <i className="fas fa-user"></i> <span>Tài khoản</span>
           </Link>
         </li>
-
       </ul>
     </aside>
   );
