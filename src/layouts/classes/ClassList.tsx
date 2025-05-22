@@ -1,8 +1,14 @@
+/**
+ * ClassList: Manage class information and assignments.
+ */
 import React, { useEffect, useState } from 'react';
 import axios from '../../api/axiosConfig';
 // import api from '../../utils/apiUtils'; // Nếu muốn dùng utils thì mở dòng này
 import './ClassList.css';
 
+/**
+ * ClassItem: Interface for class data.
+ */
 interface ClassItem {
   MaLop: number;
   MaLopHoc: string;
@@ -28,22 +34,27 @@ function ClassList() {
   const [editing, setEditing] = useState<ClassItem | null>(null);
   const [form, setForm] = useState<Partial<ClassItem>>(emptyClass);
   const [teachers, setTeachers] = useState<{ id: number; name: string }[]>([]);
+  const [showForm, setShowForm] = useState(false);
 
-  // Lấy danh sách lớp học (luôn lấy cả TenGiaoVien nếu backend đã join)
-  const fetchData = () => {
+  // Lấy danh sách lớp học (fix: luôn trả về mảng, không bị lỗi khi backend trả về object hoặc null)
+  const fetchData = async () => {
     setLoading(true);
-    axios.get('/lop')
-      .then(res => {
-        // Debug dữ liệu trả về từ backend
-        console.log('DATA /lop:', res.data);
-        const data = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
-        setClasses(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError('Không thể tải danh sách lớp học.');
-        setLoading(false);
-      });
+    setError(null);
+    try {
+      const res = await axios.get('/lop');
+      let data: ClassItem[] = [];
+      // Đảm bảo luôn là mảng, không bị lỗi khi backend trả về object hoặc null
+      if (Array.isArray(res.data)) {
+        data = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        // Nếu trả về 1 object đơn, ép thành mảng
+        data = [res.data];
+      }
+      setClasses(data);
+    } catch (err) {
+      setError('Không thể tải danh sách lớp học.');
+    }
+    setLoading(false);
   };
 
   // Lấy danh sách giáo viên (id, name)
@@ -85,48 +96,54 @@ function ClassList() {
       KhoaHoc: item.KhoaHoc,
       GiaoVien: item.GiaoVien
     });
+    setShowForm(true);
+  };
+
+  const handleAddNew = () => {
+    setEditing(null);
+    setForm(emptyClass);
+    setError(null); // Đảm bảo xóa thông báo lỗi cũ khi mở form thêm mới
+    setShowForm(true);
   };
 
   const handleCancel = () => {
     setEditing(null);
     setForm(emptyClass);
     setError(null);
+    setShowForm(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Khi thêm mới lớp học, sau khi thêm thành công thì fetch lại danh sách lớp học
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.MaLopHoc || !form.TenLop || !form.ChuyenNganh || !form.KhoaHoc) {
+    if (!form.MaLopHoc || !form.TenLop || !form.ChuyenNganh || !form.KhoaHoc || !form.GiaoVien) {
       setError('Vui lòng nhập đầy đủ thông tin bắt buộc.');
       return;
     }
     setError(null);
     const submitData = {
-      ...form,
-      GiaoVien: form.GiaoVien ? Number(form.GiaoVien) : undefined
+      MaLopHoc: form.MaLopHoc,
+      TenLop: form.TenLop,
+      ChuyenNganh: form.ChuyenNganh,
+      KhoaHoc: form.KhoaHoc,
+      GiaoVien: Number(form.GiaoVien)
     };
-    if (editing) {
-      axios.put(`/lop/${editing.MaLop}`, submitData)
-        .then(() => {
-          fetchData();
-          setEditing(null);
-          setForm(emptyClass);
-        })
-        .catch(err => {
-          setError(err.response?.data?.message || 'Lỗi cập nhật lớp học');
-        });
-    } else {
-      axios.post('/lop', submitData)
-        .then(() => {
-          fetchData();
-          setForm(emptyClass);
-        })
-        .catch(err => {
-          setError(
-            err.response?.data?.message ||
-            (typeof err.response?.data === 'string' ? err.response.data : '') ||
-            'Lỗi thêm lớp học'
-          );
-        });
+    try {
+      if (editing) {
+        await axios.put(`/lop/${editing.MaLop}`, submitData);
+        setEditing(null);
+      } else {
+        await axios.post('/lop', submitData);
+      }
+      await fetchData();
+      setForm(emptyClass);
+      setShowForm(false);
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+        (typeof err.response?.data === 'string' ? err.response.data : '') ||
+        'Lỗi thêm/cập nhật lớp học'
+      );
     }
   };
 
@@ -144,27 +161,48 @@ function ClassList() {
   return (
     <div className="class-list-page">
       <h2>Danh sách lớp học</h2>
-      <form className="class-form" onSubmit={handleSubmit}>
-        <input name="MaLopHoc" value={form.MaLopHoc || ''} onChange={handleChange} placeholder="Mã lớp học" required />
-        <input name="TenLop" value={form.TenLop || ''} onChange={handleChange} placeholder="Tên lớp" required />
-        <input name="ChuyenNganh" value={form.ChuyenNganh || ''} onChange={handleChange} placeholder="Chuyên ngành" required />
-        <input name="KhoaHoc" value={form.KhoaHoc || ''} onChange={handleChange} placeholder="Khóa học" required />
-        <select
-          name="GiaoVien"
-          value={form.GiaoVien !== undefined && form.GiaoVien !== null ? String(form.GiaoVien) : ''}
-          onChange={handleChange}
-          required
-        >
-          <option value="">-- Chọn giáo viên chủ nhiệm --</option>
-          {teachers.map(gv => (
-            <option key={gv.id} value={String(gv.id)}>
-              {gv.id} - {gv.name}
-            </option>
-          ))}
-        </select>
-        <button type="submit">{editing ? 'Cập nhật' : 'Thêm mới'}</button>
-        {editing && <button type="button" onClick={handleCancel}>Hủy</button>}
-      </form>
+      {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
+      {showForm && (
+        <form className="class-form" onSubmit={handleSubmit}>
+          <input name="MaLopHoc" value={form.MaLopHoc || ''} onChange={handleChange} placeholder="Mã lớp học" required />
+          <input name="TenLop" value={form.TenLop || ''} onChange={handleChange} placeholder="Tên lớp" required />
+          <input name="ChuyenNganh" value={form.ChuyenNganh || ''} onChange={handleChange} placeholder="Chuyên ngành" required />
+          <input name="KhoaHoc" value={form.KhoaHoc || ''} onChange={handleChange} placeholder="Khóa học" required />
+          <select
+            name="GiaoVien"
+            value={form.GiaoVien !== undefined && form.GiaoVien !== null ? String(form.GiaoVien) : ''}
+            onChange={handleChange}
+            required
+          >
+            <option value="">-- Chọn giáo viên chủ nhiệm --</option>
+            {teachers.length === 0 ? (
+              <option value="" disabled>Không có giáo viên</option>
+            ) : (
+              teachers.map(gv => (
+                <option key={gv.id} value={String(gv.id)}>
+                  {gv.id} - {gv.name}
+                </option>
+              ))
+            )}
+          </select>
+          <button type="submit" className="action-btn" title={editing ? "Cập nhật" : "Thêm mới"}>
+            <i className={editing ? "fas fa-save" : "fas fa-plus"}></i>
+          </button>
+          {editing && (
+            <button
+              type="button"
+              className="action-btn delete"
+              title="Hủy"
+              onClick={handleCancel}
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+        </form>
+      )}
+      <button className="action-btn" title="Thêm mới" onClick={handleAddNew}>
+        <i className="fas fa-plus"></i>
+      </button>
       <table className="class-table">
         <thead>
           <tr>
@@ -194,8 +232,20 @@ function ClassList() {
                   : teachers.find(gv => String(gv.id) === String(item.GiaoVien))?.name || '-'}
               </td>
               <td>
-                <button onClick={() => handleEdit(item)}>Sửa</button>
-                <button onClick={() => handleDelete(item.MaLop)}>Xóa</button>
+                <button
+                  className="action-btn"
+                  title="Sửa"
+                  onClick={() => handleEdit(item)}
+                >
+                  <i className="fas fa-edit"></i>
+                </button>
+                <button
+                  className="action-btn delete"
+                  title="Xóa"
+                  onClick={() => handleDelete(item.MaLop)}
+                >
+                  <i className="fas fa-trash-alt"></i>
+                </button>
               </td>
             </tr>
           ))}

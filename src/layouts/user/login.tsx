@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import axios from '../../api/axiosConfig';
 import './login.css';
@@ -82,12 +82,13 @@ const Login = () => {
           </div>
         </div>
 
-        <div className="form-links">
+        <div className="form-links" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <a href="/forgot-password">Quên mật khẩu?</a>
         </div>
 
         <button type="submit" className="form-btn">Đăng nhập</button>
       </form>
+    
     </div>
   );
 };

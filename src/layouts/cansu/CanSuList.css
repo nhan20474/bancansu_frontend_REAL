@@ -1,36 +1,35 @@
 .cansu-list-page {
-  max-width: 950px;
-  margin: 2.5rem auto;
-  background: #f8fafc;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(30,58,138,0.10);
-  padding: 2.5rem 1.5rem 2rem 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+  background: #f6f8fb;
+  padding: 32px 10px 40px 10px;
+  min-height: 80vh;
 }
 
 .cansu-list-page h2 {
   color: #1e3a8a;
-  margin-bottom: 2rem;
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  margin-bottom: 18px;
   text-align: center;
 }
 
 .cansu-form {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(30,58,138,0.08);
+  padding: 24px 18px 18px 18px;
+  max-width: 420px;
+  margin: 0 auto 24px auto;
   display: flex;
+  flex-direction: column;
   gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-  justify-content: center;
 }
 
 .cansu-form input, .cansu-form select {
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  border-radius: 7px;
   border: 1px solid #cbd5e1;
-  font-size: 1rem;
-  background: #f1f5f9;
-  transition: border 0.2s;
+  font-size: 1.05rem;
+  margin-bottom: 0.2rem;
 }
 
 .cansu-form input:focus, .cansu-form select:focus {
@@ -39,44 +38,46 @@
 }
 
 .cansu-form button {
-  background: linear-gradient(90deg, #2563eb 60%, #1e3a8a 100%);
+  background: #2563eb;
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 0.5rem 1.5rem;
+  padding: 0.5rem 1.2rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(30,58,138,0.08);
-  transition: background 0.2s, box-shadow 0.2s;
+  margin-top: 0.5rem;
+  transition: background 0.2s;
 }
 
 .cansu-form button:hover {
-  background: linear-gradient(90deg, #1e3a8a 60%, #2563eb 100%);
-  box-shadow: 0 4px 16px rgba(30,58,138,0.13);
+  background: #1e3a8a;
+}
+
+.cansu-form button[type="button"] {
+  background: #d32f2f;
+  margin-left: 8px;
 }
 
 .cansu-table {
   width: 100%;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(30,58,138,0.08);
   border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(30,58,138,0.08);
   overflow: hidden;
-  margin-top: 1rem;
+  margin-top: 24px;
 }
 
 .cansu-table th, .cansu-table td {
-  padding: 0.85rem 1.1rem;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 12px 10px;
   text-align: left;
-  font-size: 1.05rem;
+  border-bottom: 1px solid #e0e7ef;
 }
 
 .cansu-table th {
-  background: #e0e7ef;
-  color: #1e3a8a;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
 }
 
 .cansu-table tr:last-child td {
@@ -95,6 +96,34 @@
   vertical-align: top;
 }
 
+/* Thêm style cho icon hành động */
+.action-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 1.18rem;
+  cursor: pointer;
+  margin: 0 4px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  transition: background 0.18s, color 0.18s;
+  vertical-align: middle;
+}
+
+.action-btn.delete {
+  color: #d32f2f;
+}
+
+.action-btn:hover {
+  background: #e0e7ef;
+  color: #1e3a8a;
+}
+
+.action-btn.delete:hover {
+  background: #fdeaea;
+  color: #b71c1c;
+}
+
 @media (max-width: 900px) {
   .cansu-list-page {
     padding: 1.2rem 0.3rem;
@@ -102,6 +131,16 @@
   .cansu-table th, .cansu-table td {
     padding: 0.6rem 0.5rem;
     font-size: 0.97rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .cansu-table, .cansu-form {
+    font-size: 15px;
+  }
+  .cansu-form, .cansu-table {
+    max-width: 98vw;
+    padding: 1.2rem 0.5rem;
   }
 }
 

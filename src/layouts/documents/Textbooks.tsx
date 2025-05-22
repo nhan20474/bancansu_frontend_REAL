@@ -1,4 +1,7 @@
 // src/pages/Textbook.tsx
+/**
+ * Textbooks page: List and filter textbooks for students.
+ */
 import React, { useState, useMemo } from 'react';
 import './Textbooks.css';
 
@@ -78,7 +81,17 @@ const Textbook: React.FC = () => {
               <p><strong>Môn học:</strong> {tb.subject}</p>
               <p><strong>Tác giả:</strong> {tb.author}</p>
             </div>
-            <a href={tb.fileUrl} download className="download-btn">
+            <a
+              href={
+                tb.fileUrl.startsWith('http')
+                  ? tb.fileUrl
+                  : tb.fileUrl.startsWith('/files/')
+                    ? tb.fileUrl
+                    : `/files/${tb.fileUrl}`
+              }
+              download
+              className="download-btn"
+            >
               <i className="fas fa-download"></i> Tải xuống
             </a>
           </li>

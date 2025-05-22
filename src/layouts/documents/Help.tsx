@@ -1,4 +1,7 @@
 // src/pages/Help.tsx
+/**
+ * Help page: Frequently asked questions and support information.
+ */
 import React from 'react';
 import './Help.css';
 

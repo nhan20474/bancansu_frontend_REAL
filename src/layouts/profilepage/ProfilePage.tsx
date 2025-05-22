@@ -1,9 +1,11 @@
-// src/layouts/user/profile.tsx
+/**
+ * ProfilePage: Displays and allows editing of user profile and avatar.
+ */
 import React, { useEffect, useState, useRef } from 'react';
 import './ProfilePage.css';
 import axios from '../../api/axiosConfig';
 import { useUser } from '../../contexts/UserContext';
-import { useHistory } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 
 interface UserProfile {
   MaNguoiDung: number;
@@ -14,112 +16,140 @@ interface UserProfile {
   SoDienThoai: string;
   TrangThai: boolean;
   avatar?: string;
+  HinhAnh?: string;
+  normalized?: string;
 }
 
 const ProfilePage: React.FC = () => {
-  const { user, logout } = useUser();
+  const { user, logout, setUser } = useUser();
   const history = useHistory();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showChangePassword, setShowChangePassword] = useState(false);
-
-  // Đổi mật khẩu
-  const [oldPass, setOldPass] = useState('');
-  const [newPass, setNewPass] = useState('');
-  const [confirmPass, setConfirmPass] = useState('');
-  const [pwMsg, setPwMsg] = useState<string | null>(null);
-
-  // Đổi avatar
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
   const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Hàm lấy URL ảnh đại diện chuẩn
+  function getAvatarUrl(profile: UserProfile, user: any, preview?: string): string {
+    if (preview) return preview;
+    if (profile.normalized && typeof profile.normalized === 'string' && profile.normalized.trim() !== '') {
+      return profile.normalized;
+    }
+    if (profile.avatar && profile.avatar.startsWith('http')) {
+      return profile.avatar;
+    }
+    // Ưu tiên profile.HinhAnh nếu có
+    if (profile.HinhAnh && profile.HinhAnh.trim() !== '') {
+      return `http://localhost:8080/uploads/${profile.HinhAnh.replace(/^\/?uploads\//, '')}`;
+    }
+    if (profile.avatar && profile.avatar.trim() !== '') {
+      return `http://localhost:8080/uploads/${profile.avatar.replace(/^\/?uploads\//, '')}`;
+    }
+    if (user?.avatar && user.avatar.startsWith('http')) {
+      return user.avatar;
+    }
+    return '/avatar-placeholder.png';
+  }
 
   useEffect(() => {
     if (!user || !user.userId) {
       history.replace('/login');
       return;
     }
-    axios.get(`/user/profile?userId=${user.userId}`)
+    setLoading(true);
+    setError(null);
+    axios
+      .get(`/user/profile?userId=${user.userId}`)
       .then(res => {
-        setProfile(res.data);
+        const data = res.data;
+        setProfile(data);
         setLoading(false);
+        // Log để kiểm tra dữ liệu trả về
+        console.log('API trả về:', data);
       })
       .catch(err => {
-        setError(
-          err.response?.data?.message ||
-          'Không thể tải hồ sơ cá nhân.'
-        );
+        setError(err.response?.data?.message || 'Không thể tải hồ sơ cá nhân.');
         setLoading(false);
       });
   }, [user, history]);
 
-  // Xem trước avatar mới
-  useEffect(() => {
-    if (avatarFile) {
-      const reader = new FileReader();
-      reader.onloadend = () => setAvatarPreview(reader.result as string);
-      reader.readAsDataURL(avatarFile);
-    } else {
-      setAvatarPreview(undefined);
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      setAvatarMsg('Không có tệp nào được chọn');
+      return;
     }
-  }, [avatarFile]);
+    const file = e.target.files[0];
+    if (!file.type.startsWith('image/')) {
+      setAvatarMsg('Vui lòng chọn tệp hình ảnh');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarMsg('Tệp ảnh quá lớn (tối đa 5MB)');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => setAvatarPreview(reader.result as string);
+    reader.readAsDataURL(file);
 
-  // Đổi mật khẩu
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPwMsg(null);
-    if (!oldPass || !newPass || !confirmPass) {
-      setPwMsg('Vui lòng nhập đầy đủ thông tin.');
-      return;
-    }
-    if (newPass !== confirmPass) {
-      setPwMsg('Mật khẩu mới không khớp.');
-      return;
-    }
-    try {
-      await axios.post('/user/change-password', {
-        userId: user?.userId,
-        oldPassword: oldPass,
-        newPassword: newPass,
-      });
-      setPwMsg('Đổi mật khẩu thành công!');
-      setOldPass('');
-      setNewPass('');
-      setConfirmPass('');
-      setShowChangePassword(false);
-    } catch (err: any) {
-      setPwMsg(err.response?.data?.message || 'Đổi mật khẩu thất bại.');
-    }
-  };
-
-  // Đổi avatar
-  const handleAvatarChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAvatarMsg(null);
-    if (!avatarFile) {
-      setAvatarMsg('Vui lòng chọn ảnh.');
-      return;
-    }
-    if (!user || !user.userId) {
-      setAvatarMsg('Không xác định được người dùng.');
-      return;
-    }
     const formData = new FormData();
-    formData.append('avatar', avatarFile);
-    formData.append('userId', String(user.userId)); // Sửa ở đây
+    formData.append('avatar', file);
+    formData.append('userId', String(user?.userId || ''));
+
+    setUploading(true);
+    setAvatarMsg(null);
     try {
-      await axios.post('/user/change-avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const response = await fetch('http://localhost:8080/api/user/upload-avatar', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+        },
       });
+      if (!response.ok) {
+        throw new Error('Tải lên thất bại');
+      }
+      const data = await response.json();
+      let avatarValue = '';
+      let hinhAnhValue = '';
+      if (data.success && data.user) {
+        // Ưu tiên normalized nếu backend trả về
+        if (data.user.normalized && typeof data.user.normalized === 'string' && data.user.normalized.trim() !== '') {
+          avatarValue = data.user.normalized;
+        } else if (data.user.avatar && data.user.avatar.startsWith('http')) {
+          avatarValue = data.user.avatar;
+        } else if (data.user.avatar && data.user.avatar.trim() !== '') {
+          avatarValue = `http://localhost:8080/uploads/${data.user.avatar.replace(/^\/?uploads\//, '')}`;
+        } else if (data.user.HinhAnh && data.user.HinhAnh.trim() !== '') {
+          avatarValue = `http://localhost:8080/uploads/${data.user.HinhAnh.replace(/^\/?uploads\//, '')}`;
+        } else {
+          avatarValue = '/avatar-placeholder.png';
+        }
+        hinhAnhValue = data.user.HinhAnh || '';
+        setUser({ ...data.user, avatar: avatarValue, HinhAnh: hinhAnhValue });
+        setProfile(prev =>
+          prev
+            ? { ...prev, ...data.user, avatar: avatarValue, HinhAnh: hinhAnhValue }
+            : { ...data.user, avatar: avatarValue, HinhAnh: hinhAnhValue }
+        );
+        localStorage.setItem('user', JSON.stringify({ ...data.user, avatar: avatarValue, HinhAnh: hinhAnhValue }));
+      } else if (data.url) {
+        avatarValue = data.url.startsWith('http') ? data.url : `http://localhost:8080/uploads/${data.url}`;
+        setUser({ ...user!, avatar: avatarValue });
+        setProfile(prev => prev ? { ...prev, avatar: avatarValue } : prev);
+        localStorage.setItem('user', JSON.stringify({ ...user, avatar: avatarValue }));
+      } else {
+        throw new Error('Phản hồi từ server không hợp lệ');
+      }
       setAvatarMsg('Cập nhật avatar thành công!');
-      setAvatarFile(null);
-      // Reload lại profile
-      const res = await axios.get(`/user/profile?userId=${user.userId}`);
-      setProfile(res.data);
+      setAvatarPreview(undefined);
+      setProfile(prev => prev ? { ...prev, avatar: avatarValue, HinhAnh: hinhAnhValue } : prev);
     } catch (err: any) {
-      setAvatarMsg(err.response?.data?.message || 'Cập nhật avatar thất bại.');
+      setAvatarMsg(`Cập nhật avatar thất bại: ${err.message}`);
+      setAvatarPreview(undefined);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -132,55 +162,88 @@ const ProfilePage: React.FC = () => {
       </div>
     );
   }
-
-  if (loading) return (
-    <div className="profile-page">
-      <div className="profile-loading">
-        <i className="fas fa-spinner fa-spin"></i> Đang tải hồ sơ cá nhân...
+  if (loading) {
+    return (
+      <div className="profile-page">
+        <div className="profile-loading">
+          <i className="fas fa-spinner fa-spin"></i> Đang tải hồ sơ cá nhân...
+        </div>
       </div>
-    </div>
-  );
-  if (error) return <div className="profile-page"><div className="profile-error">{error}</div></div>;
-  if (!profile) return null;
+    );
+  }
+  if (error) {
+    return (
+      <div className="profile-page">
+        <div className="profile-error">{error}</div>
+      </div>
+    );
+  }
+  if (!profile) {
+    return (
+      <div className="profile-page">
+        <div className="profile-error">
+          Không thể tải hồ sơ. Vui lòng thử lại sau.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
       <div className="profile-content">
         <div className="profile-card">
           <div className="avatar-section">
-            <div className="avatar-edit-wrapper">
+            <div
+              style={{
+                width: 120,
+                height: 120,
+                background: '#e0e7ef',
+                borderRadius: '50%',
+                border: '3px solid #1e3a8a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                margin: '0 auto 12px auto',
+              }}
+            >
               <img
-                src={avatarPreview || profile.avatar || '/avatar-placeholder.png'}
-                alt="avatar"
-                className="avatar-img"
+                src={getAvatarUrl(profile, user, avatarPreview)}
+                alt="Avatar"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '50%',
+                  background: '#e0e7ef',
+                }}
                 onClick={() => fileInputRef.current?.click()}
                 title="Đổi ảnh đại diện"
-                style={{ cursor: 'pointer' }}
-              />
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                ref={fileInputRef}
-                onChange={e => {
-                  if (e.target.files && e.target.files[0]) setAvatarFile(e.target.files[0]);
+                onError={e => {
+                  if ((e.target as HTMLImageElement).src.indexOf('/avatar-placeholder.png') === -1) {
+                    (e.target as HTMLImageElement).src = '/avatar-placeholder.png';
+                  }
                 }}
               />
-              <button
-                className="avatar-upload-btn"
-                onClick={() => fileInputRef.current?.click()}
-                type="button"
-              >
-                <i className="fas fa-camera"></i>
-              </button>
             </div>
-            {avatarFile && (
-              <form onSubmit={handleAvatarChange} className="avatar-upload-form">
-                <button type="submit" className="profile-btn">Lưu avatar</button>
-                <button type="button" className="profile-btn logout" onClick={() => setAvatarFile(null)}>Hủy</button>
-                {avatarMsg && <div className="profile-error" style={{marginTop: 8}}>{avatarMsg}</div>}
-              </form>
-            )}
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              ref={fileInputRef}
+              onChange={handleAvatarChange}
+              disabled={uploading}
+            />
+            <button
+              className="avatar-upload-btn"
+              onClick={() => fileInputRef.current?.click()}
+              type="button"
+              disabled={uploading}
+            >
+              <i className="fas fa-camera"></i>
+            </button>
+            {uploading && <span>Đang tải lên...</span>}
+            {avatarMsg && <div className="profile-error" style={{ marginTop: 8 }}>{avatarMsg}</div>}
           </div>
           <div className="info-section">
             <h2>Hồ sơ cá nhân</h2>
@@ -189,44 +252,17 @@ const ProfilePage: React.FC = () => {
             <p><strong>MSSV:</strong> {profile.MaSoSV}</p>
             <p><strong>SĐT:</strong> {profile.SoDienThoai}</p>
             <p><strong>Vai trò:</strong> {profile.VaiTro}</p>
-            <p><strong>Trạng thái:</strong> {profile.TrangThai ? 'Đang hoạt động' : 'Khóa'}</p>
+            <p><strong>Trạng thái:</strong> {profile.TrangThai === false ? 'Khóa' : 'Đang hoạt động'}</p>
             <div className="profile-actions">
-              <button className="profile-btn" onClick={() => setShowChangePassword(v => !v)}>
+              <Link className="profile-btn" to="/change-password">
                 <i className="fas fa-key"></i> Đổi mật khẩu
-              </button>
+              </Link>
               <button className="profile-btn logout" onClick={logout}>
                 <i className="fas fa-sign-out-alt"></i> Đăng xuất
               </button>
             </div>
           </div>
         </div>
-        {showChangePassword && (
-          <form className="change-password-form" onSubmit={handleChangePassword}>
-            <h3>Đổi mật khẩu</h3>
-            <input
-              type="password"
-              placeholder="Mật khẩu cũ"
-              value={oldPass}
-              onChange={e => setOldPass(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Mật khẩu mới"
-              value={newPass}
-              onChange={e => setNewPass(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Nhập lại mật khẩu mới"
-              value={confirmPass}
-              onChange={e => setConfirmPass(e.target.value)}
-            />
-            <button type="submit" className="profile-btn">
-              Xác nhận đổi mật khẩu
-            </button>
-            {pwMsg && <div className="profile-error" style={{marginTop: 8}}>{pwMsg}</div>}
-          </form>
-        )}
       </div>
     </div>
   );

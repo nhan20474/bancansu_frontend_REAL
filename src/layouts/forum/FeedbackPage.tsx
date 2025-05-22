@@ -1,3 +1,6 @@
+/**
+ * FeedbackPage: Allows users to submit feedback about officers or the system.
+ */
 import React, { useState, useEffect } from 'react';
 import axios from '../../api/axiosConfig';
 import '../user/login.css';

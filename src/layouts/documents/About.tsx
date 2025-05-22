@@ -1,4 +1,7 @@
 // src/pages/About.tsx
+/**
+ * About page: Introduces the system and development team.
+ */
 import React from 'react';
 import './About.css';
 

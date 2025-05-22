@@ -1,3 +1,7 @@
+/**
+ * Axios instance for API requests.
+ * All API calls should use this instance to ensure consistent baseURL and headers.
+ */
 import axios from 'axios';
 
 // Tạo một instance axios với cấu hình mặc định cho toàn bộ dự án

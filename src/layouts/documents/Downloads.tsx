@@ -1,4 +1,7 @@
 // src/pages/Download.tsx
+/**
+ * Downloads page: List of downloadable files for students.
+ */
 import React from 'react';
 import './Downloads.css';
 
@@ -41,7 +44,17 @@ const Download: React.FC = () => {
               <h3>{file.name}</h3>
               <p>{file.description}</p>
             </div>
-            <a href={file.fileUrl} download className="download-btn">
+            <a
+              href={
+                file.fileUrl.startsWith('http')
+                  ? file.fileUrl
+                  : file.fileUrl.startsWith('/files/')
+                    ? file.fileUrl
+                    : `/files/${file.fileUrl}`
+              }
+              download
+              className="download-btn"
+            >
               <i className="fas fa-download"></i> Tải về
             </a>
           </li>

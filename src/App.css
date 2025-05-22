@@ -4,6 +4,8 @@ html, body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
   background-color: #f1f5f9;
+  /* Cho phép cuộn toàn trang */
+  overflow-y: auto;
 }
 
 /* ===== Khung tổng ===== */
@@ -12,6 +14,8 @@ html, body {
   flex-direction: column;
   min-height: 100vh;
   background-color: #f1f5f9;
+  /* Đảm bảo cuộn khi nội dung dài */
+  height: auto;
 }
 
 /* ===== Phần nội dung chính (trừ navbar/footer) ===== */
@@ -20,6 +24,10 @@ html, body {
   display: flex;
   flex-direction: column;
   transition: margin-left 0.3s;
+  /* Cho phép cuộn nếu nội dung dài */
+  min-height: 0;
+  height: auto;
+  overflow: visible;
 }
 
 /* ===== Vùng chứa nội dung chính ===== */
@@ -30,6 +38,9 @@ html, body {
   box-sizing: border-box;
   background-color: inherit;
   min-height: calc(100vh - 120px); /* 60px navbar + 60px footer */
+  /* Cho phép cuộn nếu nội dung dài */
+  height: auto;
+  overflow: visible;
 }
 
 /* ===== Header nội dung ===== */

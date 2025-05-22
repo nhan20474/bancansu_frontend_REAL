@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Switch, Route, Redirect, useLocation } from 'react-router-dom';
 import Navbar from './layouts/components/Navbar';
 import Sidebar from './layouts/components/Sidebar';
@@ -14,6 +14,9 @@ import ClassList from './layouts/classes/ClassList';
 import StudentList from './layouts/students/StudentList';
 import CanSuList from './layouts/cansu/CanSuList';
 import NotificationList from './layouts/notifications/NotificationList';
+import ForgotPassword from './layouts/user/ForgotPassword';
+import ChangePassword from './layouts/user/ChangePasswordForm';
+import TaskList from './layouts/tasks/TaskList';
 import { UserProvider, useUser } from './contexts/UserContext';
 import './App.css';
 
@@ -26,6 +29,7 @@ function AppContent() {
 
   const { user } = useUser();
   const location = useLocation();
+  const [notifications, setNotifications] = useState<any[]>([]); // hoặc kiểu phù hợp
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const toggleDropdown = (key: keyof typeof dropdowns) => {
@@ -60,14 +64,18 @@ function AppContent() {
           <Navbar
             toggleSidebar={toggleSidebar}
             toggleFullscreen={toggleFullscreen}
+            notifications={notifications} // truyền prop notifications vào Navbar
           />
         )}
         <div className="main-body">
           <Switch>
+            <Route path="/login" component={Login} />
+            <Route path="/forgot-password" component={ForgotPassword} />
+            <Route path="/change-password" component={ChangePassword} />
+            {/* Các route dưới đây yêu cầu đăng nhập */}
             <Route exact path="/">
               {!user ? <Redirect to="/login" /> : <Homepage />}
             </Route>
-            <Route path="/login" component={Login} />
             <Route path="/help" component={Help} />
             <Route path="/about" component={About} />
             <Route path="/feedback" component={FeedbackPage} />
@@ -77,6 +85,7 @@ function AppContent() {
             <Route path="/students" component={StudentList} />
             <Route path="/cansu" component={CanSuList} />
             <Route path="/notifications" component={NotificationList} />
+            <Route path="/tasks" component={TaskList} />
             {/* Thêm các route khác tại đây */}
           </Switch>
         </div>

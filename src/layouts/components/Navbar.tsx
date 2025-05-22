@@ -7,18 +7,21 @@ import { Link } from 'react-router-dom';
 interface NavbarProps {
   toggleSidebar: () => void;
   toggleFullscreen: () => void;
+  notifications: Notification[]; // Thêm prop notifications
 }
 
 interface Notification {
   MaThongBao: number;
   TieuDe: string;
   ThoiGianGui: string;
+  read?: boolean; // Thêm thuộc tính read
 }
 
-const Navbar = ({ toggleSidebar, toggleFullscreen }: NavbarProps) => {
+const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotifications }: NavbarProps) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [hasNewNotification, setHasNewNotification] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null); // Thêm ref cho tài khoản
   const { user, logout } = useUser();
@@ -28,6 +31,14 @@ const Navbar = ({ toggleSidebar, toggleFullscreen }: NavbarProps) => {
       .then(res => setNotifications(res.data))
       .catch(() => setNotifications([]));
   }, []);
+
+  useEffect(() => {
+    if (propNotifications && propNotifications.some(n => !n.read)) {
+      setHasNewNotification(true);
+    } else {
+      setHasNewNotification(false);
+    }
+  }, [propNotifications]);
 
   // Đóng dropdown thông báo khi click ra ngoài
   useEffect(() => {
@@ -67,13 +78,28 @@ const Navbar = ({ toggleSidebar, toggleFullscreen }: NavbarProps) => {
       <div className="navbar-actions d-flex align-center gap-4">
         <i className="fas fa-expand-arrows-alt icon-btn" onClick={toggleFullscreen}></i>
         <i className="fas fa-cog icon-btn"></i>
-        <div className="notification-bell" ref={bellRef}>
+        <div className="notification-bell" ref={bellRef} style={{ position: 'relative' }}>
           <i
             className="fas fa-bell"
             onClick={() => setShowDropdown(!showDropdown)}
             style={{ cursor: 'pointer', fontSize: '1.3rem', color: '#1e3a8a', marginRight: 16 }}
             title="Thông báo"
           />
+          {hasNewNotification && (
+            <span
+              style={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                width: 12,
+                height: 12,
+                background: '#d32f2f',
+                borderRadius: '50%',
+                border: '2px solid #fff',
+                display: 'inline-block'
+              }}
+            ></span>
+          )}
           {showDropdown && (
             <div className="notification-dropdown">
               <div className="dropdown-title">Thông báo mới</div>

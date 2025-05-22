@@ -1,7 +1,13 @@
+/**
+ * StudentList: Manage student information.
+ */
 import React, { useEffect, useState } from 'react';
 import axios from '../../api/axiosConfig';
 import './StudentList.css';
 
+/**
+ * Student: Interface for student data.
+ */
 interface Student {
   MaNguoiDung: number;
   MaSoSV: string;
