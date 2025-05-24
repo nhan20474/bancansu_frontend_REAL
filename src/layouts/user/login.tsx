@@ -17,24 +17,43 @@ const Login = () => {
     e.preventDefault();
     setError(null);
     try {
-      const res = await axios.post('/auth/login', { username, password });
+      // Đảm bảo gửi đúng endpoint và đúng dữ liệu
+      const res = await axios.post('/auth/login', {
+        username: username.trim(),
+        password: password
+      });
       const data = res.data;
-      if (!data.MaNguoiDung) {
-        setError('Thiếu thông tin người dùng.');
+      const userId = data.userId || data.MaNguoiDung;
+      const name = data.name || data.HoTen || data.username || '';
+      const email = data.email || data.Email || '';
+      if (!userId) {
+        setError('Sai tên đăng nhập hoặc mật khẩu.');
         return;
       }
       const user = {
-        userId: data.MaNguoiDung,
-        name: data.HoTen,
-        email: data.Email,
-        avatar: data.avatar || '/avatar-placeholder.png'
+        userId,
+        name,
+        email,
+        avatar: data.avatar || data.HinhAnh || '/avatar-placeholder.png'
       };
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       history.push('/');
     } catch (err: any) {
-      console.error('Đăng nhập lỗi:', err);
-      setError(err.response?.data?.message || 'Sai tên đăng nhập hoặc mật khẩu.');
+      // Xử lý lỗi 401 rõ ràng hơn
+      if (err.response?.status === 401) {
+        setError('Sai tên đăng nhập hoặc mật khẩu. Vui lòng kiểm tra lại thông tin đăng nhập.');
+      } else if (err.response?.status === 400) {
+        setError('Vui lòng nhập đầy đủ thông tin.');
+      } else if (err.code === 'ERR_NETWORK') {
+        setError('Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc liên hệ quản trị.');
+      } else {
+        setError(
+          err.response?.data?.message ||
+          (typeof err.response?.data === 'string' ? err.response.data : '') ||
+          'Không thể đăng nhập. Vui lòng thử lại.'
+        );
+      }
     }
   };
 

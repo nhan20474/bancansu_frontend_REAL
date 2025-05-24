@@ -29,26 +29,41 @@ const CanSuList: React.FC = () => {
   const [editing, setEditing] = useState<CanSu | null>(null);
   const [form, setForm] = useState<Partial<CanSu>>(emptyCanSu);
   const [classes, setClasses] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const { user } = useUser();
 
   const fetchData = () => {
     setLoading(true);
-    axios.get('/cansu')
-      .then(res => {
+    // Lấy cả danh sách cán sự và user song song
+    Promise.all([
+      axios.get('/cansu'),
+      axios.get('/user/all')
+    ])
+      .then(([cansuRes, userRes]) => {
         // Lọc bỏ cán sự đã hết hạn (DenNgay < hôm nay)
         const today = new Date();
-        const validCanSu = res.data.filter((item: any) => {
+        const validCanSu = cansuRes.data.filter((item: any) => {
           if (!item.DenNgay) return true;
           return new Date(item.DenNgay) >= today;
         });
         // Xóa cán sự hết hạn khỏi DB
-        const expired = res.data.filter((item: any) => item.DenNgay && new Date(item.DenNgay) < today);
+        const expired = cansuRes.data.filter((item: any) => item.DenNgay && new Date(item.DenNgay) < today);
         expired.forEach((item: any) => {
           axios.delete(`/cansu/${item.MaCanSu}`).catch(() => {});
         });
-        setCanSu(validCanSu);
+        setUsers(userRes.data);
+        // Map tên người được thêm vào từng cán sự (dựa vào MaNguoiDung)
+        const userMap: Record<number, string> = {};
+        userRes.data.forEach((u: any) => {
+          userMap[u.MaNguoiDung] = u.HoTen || u.email || u.MaNguoiDung;
+        });
+        const canSuWithTen = validCanSu.map((item: any) => ({
+          ...item,
+          TenCanSu: userMap[item.MaNguoiDung] || ''
+        }));
+        setCanSu(canSuWithTen);
         setLoading(false);
       })
       .catch(err => {
@@ -65,11 +80,40 @@ const CanSuList: React.FC = () => {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'MaLop') {
+      setForm(prev => ({ ...prev, MaLop: Number(value), MaNguoiDung: 0 }));
+      // Lấy thành viên lớp từ API thay vì lọc users toàn trường
+      if (value) {
+        axios.get(`/lop/${value}/thanhvien`)
+          .then(res => {
+            const members = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
+            setFilteredUsers(members);
+            // Nếu có user đầu tiên thì tự động chọn vào dropdown
+            if (members.length > 0) {
+              setForm(prev => ({ ...prev, MaNguoiDung: members[0].MaNguoiDung }));
+            } else {
+              setForm(prev => ({ ...prev, MaNguoiDung: 0 }));
+            }
+          })
+          .catch(() => {
+            setFilteredUsers([]);
+            setForm(prev => ({ ...prev, MaNguoiDung: 0 }));
+          });
+      } else {
+        setFilteredUsers([]);
+        setForm(prev => ({ ...prev, MaNguoiDung: 0 }));
+      }
+    } else if (name === 'MaNguoiDung') {
+      setForm(prev => ({ ...prev, MaNguoiDung: Number(value) }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleEdit = (item: CanSu) => {
     setEditing(item);
+    setShowForm(true);
     setForm({
       MaLop: item.MaLop,
       MaNguoiDung: item.MaNguoiDung,
@@ -77,7 +121,21 @@ const CanSuList: React.FC = () => {
       TuNgay: item.TuNgay ? item.TuNgay.slice(0, 10) : '',
       DenNgay: item.DenNgay ? item.DenNgay.slice(0, 10) : ''
     });
-    openForm();
+    // Lấy lại danh sách lớp trước khi lấy thành viên lớp
+    axios.get('/lop/all')
+      .then(res => {
+        setClasses(res.data);
+        // Sau khi có danh sách lớp, lấy thành viên lớp
+        return axios.get(`/lop/${item.MaLop}/thanhvien`);
+      })
+      .then(res => {
+        const members = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
+        setFilteredUsers(members);
+      })
+      .catch(() => {
+        setClasses([]);
+        setFilteredUsers([]);
+      });
   };
 
   const handleCancel = () => {
@@ -95,20 +153,29 @@ const CanSuList: React.FC = () => {
       setError('Vui lòng chọn lớp hợp lệ.');
       return;
     }
+    // Bắt buộc phải chọn người được thêm (MaNguoiDung)
     if (!form.MaNguoiDung || !form.ChucVu || !form.TuNgay) {
       setError('Vui lòng nhập đầy đủ thông tin bắt buộc.');
       return;
     }
-    // Ràng buộc DenNgay >= TuNgay
+    // Kiểm tra người được thêm có thực sự là thành viên của lớp không (dựa vào filteredUsers)
+    const isMember = filteredUsers.some(
+      (u: any) => String(u.MaNguoiDung) === String(form.MaNguoiDung)
+    );
+    if (!isMember) {
+      setError('Người được thêm không thuộc lớp đã chọn.');
+      return;
+    }
+    // Ràng buộc DenNgay >= TuNgay (nếu có DenNgay)
     if (form.DenNgay && form.TuNgay && new Date(form.DenNgay) < new Date(form.TuNgay)) {
       setError('Đến ngày không được nhỏ hơn từ ngày.');
       return;
     }
     setError(null);
-    // Khi thêm mới, MaNguoiDung là ID người đang đăng nhập
+    // MaNguoiDung là người được thêm (chọn từ dropdown)
     const submitData = {
       ...form,
-      MaNguoiDung: editing ? form.MaNguoiDung : user?.userId
+      DenNgay: form.DenNgay ? form.DenNgay : null
     };
     if (editing) {
       axios.put(`/cansu/${editing.MaCanSu}`, submitData)
@@ -143,9 +210,9 @@ const CanSuList: React.FC = () => {
     axios.get('/lop/all')
       .then(res => setClasses(res.data))
       .catch(() => setClasses([]));
-    axios.get('/user/all')
-      .then(res => setUsers(res.data))
-      .catch(() => setUsers([]));
+    // Khi mở form, không lấy toàn bộ user nữa, chỉ lấy khi chọn lớp
+    setFilteredUsers([]);
+    setForm(prev => ({ ...prev, MaNguoiDung: 0 }));
   };
 
   if (loading) return <div className="cansu-list-page">Đang tải danh sách cán sự...</div>;
@@ -156,14 +223,16 @@ const CanSuList: React.FC = () => {
       <h2>Danh sách cán sự</h2>
       {showForm && (
         <form className="cansu-form" onSubmit={handleSubmit}>
-          <div>
-            <label>Lớp:</label>
+          <h3 className="cansu-form-title">
+            {editing ? 'Cập nhật cán sự' : 'Thêm cán sự mới'}
+          </h3>
+          <div className="cansu-form-group">
             <select
               name="MaLop"
               value={form.MaLop || ''}
               onChange={handleChange}
               required
-              disabled={classes.length === 0}
+              disabled={!!editing || classes.length === 0}
             >
               <option value="">--Chọn lớp--</option>
               {classes.map((lop: any) => (
@@ -173,72 +242,82 @@ const CanSuList: React.FC = () => {
               ))}
             </select>
             {classes.length === 0 && (
-              <div style={{ color: '#d32f2f', fontSize: 13, marginTop: 2 }}>
+              <div className="form-error" style={{ fontSize: 13, marginTop: 2 }}>
                 Không có dữ liệu lớp. Vui lòng thêm lớp trước!
               </div>
             )}
           </div>
-          {/* Chỉ cho sửa người giao khi edit, khi thêm mới sẽ tự động lấy user đăng nhập */}
-          {editing && (
-            <div>
-              <label>Người giao:</label>
-              <select
-                name="MaNguoiDung"
-                value={form.MaNguoiDung || ''}
-                onChange={handleChange}
-                required
-              >
-                <option value="">--Chọn người giao--</option>
-                {users.map((u: any) => (
-                  <option key={u.MaNguoiDung} value={u.MaNguoiDung}>
-                    {u.HoTen}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <input
-            name="ChucVu"
-            value={form.ChucVu || ''}
-            onChange={handleChange}
-            placeholder="Chức vụ"
-            required
-          />
-          <input
-            name="TuNgay"
-            type="date"
-            value={form.TuNgay || ''}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="DenNgay"
-            type="date"
-            value={form.DenNgay || ''}
-            onChange={handleChange}
-          />
-          <button type="submit" className="action-btn" title={editing ? "Cập nhật" : "Thêm mới"}>
-            <i className={editing ? "fas fa-save" : "fas fa-plus"}></i>
-          </button>
-          {editing && (
+          <div className="cansu-form-group">
+            <select
+              name="MaNguoiDung"
+              value={form.MaNguoiDung || ''}
+              onChange={handleChange}
+              required
+              disabled={!!editing || !form.MaLop}
+            >
+              <option value="">--Chọn người--</option>
+              {form.MaLop && filteredUsers.length === 0 && (
+                <option disabled value="">Không có thành viên trong lớp này</option>
+              )}
+              {filteredUsers.map((u: any) => (
+                <option key={u.MaNguoiDung} value={u.MaNguoiDung}>
+                  {u.HoTen || u.email || u.MaNguoiDung}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="cansu-form-group">
+            <input
+              name="ChucVu"
+              value={form.ChucVu || ''}
+              onChange={handleChange}
+              placeholder="Chức vụ"
+              required
+            />
+          </div>
+          <div className="cansu-form-row">
+            <input
+              name="TuNgay"
+              type="date"
+              value={form.TuNgay || ''}
+              onChange={handleChange}
+              required
+              style={{ flex: 1 }}
+              placeholder="Từ ngày"
+            />
+            <input
+              name="DenNgay"
+              type="date"
+              value={form.DenNgay || ''}
+              onChange={handleChange}
+              style={{ flex: 1 }}
+              placeholder="Đến ngày"
+            />
+          </div>
+          {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
+          <div className="cansu-form-actions">
+            <button type="submit" className="action-btn">
+              <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu cập nhật" : "Thêm mới"}
+            </button>
             <button
               type="button"
               className="action-btn delete"
               title="Hủy"
               onClick={handleCancel}
             >
-              <i className="fas fa-times"></i>
+              <i className="fas fa-times"></i> Hủy
             </button>
-          )}
+          </div>
         </form>
       )}
       <button className="action-btn" title="Thêm mới" onClick={() => openForm()}>
         <i className="fas fa-plus"></i>
       </button>
-      <table className="cansu-table">
+      <table className="cansu-table" style={{ minWidth: 900, overflowX: 'auto', display: 'block' }}>
         <thead>
           <tr>
-            <th>Người thêm </th>
+            <th>Người thêm</th>
+            <th>Người được thêm</th>
             <th>Tên lớp</th>
             <th>Chức vụ</th>
             <th>Từ ngày</th>
@@ -249,7 +328,14 @@ const CanSuList: React.FC = () => {
         <tbody>
           {cansu.map(item => (
             <tr key={item.MaCanSu}>
-              <td>{item.TenCanSu || ''}</td>
+              <td>
+                {/* Hiển thị tên người thêm là họ tên người đang đăng nhập */}
+                {item.TenCanSu  || ''}
+              </td>
+              <td>
+                {/* Hiển thị tên người được thêm */}
+                {item.TenCanSu || ''}
+              </td>
               <td>{item.TenLop || ''}</td>
               <td>{item.ChucVu}</td>
               <td>{item.TuNgay ? new Date(item.TuNgay).toLocaleDateString() : ''}</td>

@@ -42,10 +42,13 @@ const ProfilePage: React.FC = () => {
     }
     // Ưu tiên profile.HinhAnh nếu có
     if (profile.HinhAnh && profile.HinhAnh.trim() !== '') {
-      return `http://localhost:8080/uploads/${profile.HinhAnh.replace(/^\/?uploads\//, '')}`;
+      // Loại bỏ mọi tiền tố App/, App\, uploads/, uploads\, /uploads/, \uploads\
+      const file = profile.HinhAnh.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
+      return `http://localhost:8080/uploads/${file}`;
     }
     if (profile.avatar && profile.avatar.trim() !== '') {
-      return `http://localhost:8080/uploads/${profile.avatar.replace(/^\/?uploads\//, '')}`;
+      const file = profile.avatar.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
+      return `http://localhost:8080/uploads/${file}`;
     }
     if (user?.avatar && user.avatar.startsWith('http')) {
       return user.avatar;
@@ -120,9 +123,12 @@ const ProfilePage: React.FC = () => {
         } else if (data.user.avatar && data.user.avatar.startsWith('http')) {
           avatarValue = data.user.avatar;
         } else if (data.user.avatar && data.user.avatar.trim() !== '') {
-          avatarValue = `http://localhost:8080/uploads/${data.user.avatar.replace(/^\/?uploads\//, '')}`;
+          // Loại bỏ mọi tiền tố App/, App\, uploads/, uploads\, /uploads/, \uploads\
+          const file = data.user.avatar.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
+          avatarValue = `http://localhost:8080/uploads/${file}`;
         } else if (data.user.HinhAnh && data.user.HinhAnh.trim() !== '') {
-          avatarValue = `http://localhost:8080/uploads/${data.user.HinhAnh.replace(/^\/?uploads\//, '')}`;
+          const file = data.user.HinhAnh.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
+          avatarValue = `http://localhost:8080/uploads/${file}`;
         } else {
           avatarValue = '/avatar-placeholder.png';
         }
@@ -135,7 +141,9 @@ const ProfilePage: React.FC = () => {
         );
         localStorage.setItem('user', JSON.stringify({ ...data.user, avatar: avatarValue, HinhAnh: hinhAnhValue }));
       } else if (data.url) {
-        avatarValue = data.url.startsWith('http') ? data.url : `http://localhost:8080/uploads/${data.url}`;
+        // Loại bỏ mọi tiền tố App/, App\, uploads/, uploads\, /uploads/, \uploads\
+        const file = data.url.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
+        avatarValue = data.url.startsWith('http') ? data.url : `http://localhost:8080/uploads/${file}`;
         setUser({ ...user!, avatar: avatarValue });
         setProfile(prev => prev ? { ...prev, avatar: avatarValue } : prev);
         localStorage.setItem('user', JSON.stringify({ ...user, avatar: avatarValue }));

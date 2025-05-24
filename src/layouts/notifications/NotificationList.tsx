@@ -211,17 +211,39 @@ const NotificationList: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="notification-list-page">Đang tải danh sách thông báo...</div>;
-  if (error) return <div className="notification-list-page" style={{ color: 'red' }}>{error}</div>;
+  // Sắp xếp thông báo mới nhất lên đầu
+  const sortedNotifications = [...notifications].sort((a, b) =>
+    (b.ThoiGianGui || '').localeCompare(a.ThoiGianGui || '')
+  );
+
+  if (loading) return (
+    <div className="notification-list-page">
+      <div className="form-success">Đang tải danh sách thông báo...</div>
+    </div>
+  );
+  if (error) return (
+    <div className="notification-list-page">
+      <div className="form-error">{error}</div>
+    </div>
+  );
 
   return (
-    <div className="notification-list-page notification-grid-page">
-      <h2>Danh sách thông báo</h2>
-      <div style={{ marginBottom: 16 }}>
-        
+    <div className="notification-list-page notification-feed-page">
+      <div className="notification-feed-header">
+        <h1>
+          <i className="fas fa-bell" style={{color:'#2563eb', marginRight:8}}></i>
+          Bảng tin thông báo
+        </h1>
+        <p>
+          Cập nhật các thông báo mới nhất từ hệ thống, lớp học, cán sự. Nhấn vào từng thông báo để xem chi tiết hoặc mở liên kết liên quan.
+        </p>
+        <button className="feed-add-btn" title="Thêm thông báo mới" onClick={() => { setShowForm(true); setEditing(null); setForm({ ...emptyNotification }); setImagePreview(undefined); }}>
+          <i className="fas fa-plus"></i> Đăng thông báo mới
+        </button>
       </div>
       {showForm && (
-        <form className="notification-form" onSubmit={handleFormSubmit} encType="multipart/form-data">
+        <form className="notification-form" onSubmit={handleFormSubmit} encType="multipart/form-data" style={{margin:'0 auto 24px auto', maxWidth:420}}>
+          <h3 style={{textAlign:'center', color:'#2563eb', marginBottom:10}}>{editing ? 'Cập nhật thông báo' : 'Đăng thông báo mới'}</h3>
           <input
             name="TieuDe"
             value={form.TieuDe || ''}
@@ -266,7 +288,6 @@ const NotificationList: React.FC = () => {
             ref={fileInputRef}
             title="Chọn ảnh đính kèm"
           />
-          {/* Hiển thị preview ảnh khi chọn file hoặc khi sửa */}
           {(imagePreview || (editing && typeof form.AnhDinhKem === 'string' && form.AnhDinhKem)) && (
             <div style={{ margin: '8px 0', textAlign: 'center' }}>
               <img
@@ -282,114 +303,92 @@ const NotificationList: React.FC = () => {
               <div style={{ fontSize: 13, color: '#888' }}>Ảnh đính kèm hiện tại</div>
             </div>
           )}
-          <button type="submit" className="action-btn" title={editing ? "Lưu thay đổi" : "Thêm thông báo"}>
-            <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu" : "Thêm mới"}
-          </button>
-          {editing && (
-            <button
-              type="button"
-              className="action-btn delete"
-              title="Hủy chỉnh sửa"
-              onClick={handleCancel}
-            >
-              <i className="fas fa-times"></i> Hủy
+          <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:8}}>
+            <button type="submit" className="action-btn" title={editing ? "Lưu thay đổi" : "Thêm thông báo"}>
+              <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu" : "Thêm mới"}
             </button>
-          )}
+            {editing && (
+              <button
+                type="button"
+                className="action-btn delete"
+                title="Hủy chỉnh sửa"
+                onClick={handleCancel}
+              >
+                <i className="fas fa-times"></i> Hủy
+              </button>
+            )}
+          </div>
         </form>
       )}
-      <button className="action-btn" title="Thêm thông báo mới" onClick={() => { setShowForm(true); setEditing(null); setForm({ ...emptyNotification }); setImagePreview(undefined); }}>
-        <i className="fas fa-plus"></i> Thêm mới
-      </button>
-      <div className="notification-grid">
-        {notifications.map(item => (
-          <div className="notification-card" key={item.MaThongBao}>
-            <div className="notification-img-wrap">
-              {item.AnhDinhKemUrl
-                ? <img
-                    src={item.AnhDinhKemUrl}
-                    alt="Ảnh đính kèm"
-                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                    onError={e => {
-                      // Nếu ảnh lỗi, ẩn ảnh và hiện icon chuông
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      const parent = (e.target as HTMLImageElement).parentElement;
-                      if (parent) {
-                        parent.innerHTML = '<div class="notification-img-placeholder"><i class="fas fa-bell"></i></div>';
-                      }
-                    }}
-                  />
-                : <div className="notification-img-placeholder"><i className="fas fa-bell"></i></div>
-              }
-            </div>
-            <div className="notification-card-body">
-              <h3 className="notification-title">
-                <span
-                  // Cho phép hiển thị emoji hoặc icon trong tiêu đề
-                  dangerouslySetInnerHTML={{ __html: item.TieuDe }}
-                />
-              </h3>
-              <div className="notification-meta">
-                <span className="notification-sender">Người gửi: {item.TenNguoiGui}</span>
-                <span className="notification-time">{item.ThoiGianGui ? new Date(item.ThoiGianGui).toLocaleString('vi-VN') : ''}</span>
+      <div className="notification-feed-list">
+        {sortedNotifications.length === 0 && (
+          <div className="form-error" style={{margin:'0 auto', maxWidth:400, textAlign:'center'}}>Không có thông báo nào.</div>
+        )}
+        {sortedNotifications.map(item => (
+          <div className="notification-feed-card" key={item.MaThongBao}>
+            <div className="feed-card-header">
+              <div className="feed-avatar">
+                <i className="fas fa-user-circle"></i>
               </div>
-              <div className="notification-content">
-                <span
-                  // Cho phép hiển thị emoji hoặc icon trong nội dung
-                  dangerouslySetInnerHTML={{ __html: item.NoiDung }}
-                />
+              <div className="feed-meta">
+                <span className="feed-sender">{item.TenNguoiGui}</span>
+                <span className="feed-time">{item.ThoiGianGui ? new Date(item.ThoiGianGui).toLocaleString('vi-VN') : ''}</span>
               </div>
-              {item.link && (
-                <div className="notification-link">
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: '#2563eb', textDecoration: 'underline', wordBreak: 'break-all' }}
-                  >
-                    {item.link}
-                  </a>
-                </div>
-              )}
-              <div className="notification-actions">
+              <div className="feed-actions">
                 <button
                   className="action-btn"
-                  title="Chỉnh sửa thông báo"
+                  title="Chỉnh sửa"
                   onClick={() => handleEdit(item)}
                 >
                   <i className="fas fa-edit"></i>
                 </button>
                 <button
                   className="action-btn delete"
-                  title="Xóa thông báo"
+                  title="Xóa"
                   onClick={() => handleDelete(item.MaThongBao)}
                 >
                   <i className="fas fa-trash-alt"></i>
                 </button>
-                {item.AnhDinhKemUrl &&
+              </div>
+            </div>
+            <div className="feed-card-body">
+              <div className="feed-title" dangerouslySetInnerHTML={{ __html: item.TieuDe }} />
+              <div className="feed-content" dangerouslySetInnerHTML={{ __html: item.NoiDung }} />
+              {item.link && (
+                <div className="feed-link">
                   <a
-                    href={item.AnhDinhKemUrl}
+                    href={item.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="action-btn"
-                    title="Xem ảnh đính kèm"
                   >
-                    <i className="fas fa-image"></i>
+                    {/* Đổi biểu tượng thành chữ "Tham gia" */}
+                    Tham gia
                   </a>
-                }
-                {item.TepDinhKem && (
-                  <div className="notification-link">
-                    <a
-                      href={item.TepDinhKem}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: '#2563eb', textDecoration: 'underline', wordBreak: 'break-all' }}
-                      title="Mở đường dẫn"
-                    >
-                      {item.TepDinhKem}
-                    </a>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+              {item.AnhDinhKemUrl && (
+                <div className="feed-image-wrap">
+                  <img
+                    src={item.AnhDinhKemUrl}
+                    alt="Ảnh đính kèm"
+                    className="feed-image"
+                    onError={e => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              {item.TepDinhKem && (
+                <div className="feed-link">
+                  <a
+                    href={item.TepDinhKem}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <i className="fas fa-paperclip"></i> {item.TepDinhKem}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         ))}

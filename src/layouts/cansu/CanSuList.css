@@ -16,25 +16,74 @@
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(30,58,138,0.08);
-  padding: 24px 18px 18px 18px;
-  max-width: 420px;
+  padding: 24px 24px 18px 24px;
+  max-width: 500px;
   margin: 0 auto 24px auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
-.cansu-form input, .cansu-form select {
+.cansu-form-title {
+  text-align: center;
+  margin-bottom: 10px;
+  color: #2563eb;
+  letter-spacing: 1px;
+  font-size: 1.18rem;
+  font-weight: 600;
+}
+
+.cansu-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cansu-form-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.cansu-form-row input {
+  width: 100%;
+}
+
+.cansu-form input,
+.cansu-form select {
   padding: 0.55rem 0.9rem;
   border-radius: 7px;
   border: 1px solid #cbd5e1;
   font-size: 1.05rem;
+  background: #f9fafe;
+  transition: border 0.18s;
+  box-sizing: border-box;
+  width: 100%;
   margin-bottom: 0.2rem;
 }
 
-.cansu-form input:focus, .cansu-form select:focus {
+.cansu-form input:focus,
+.cansu-form select:focus {
   border: 1.5px solid #2563eb;
   outline: none;
+  background: #fff;
+}
+
+.cansu-form .form-error {
+  background: #ffe5e5;
+  color: #d32f2f;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.cansu-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
 }
 
 .cansu-form button {
@@ -47,15 +96,22 @@
   cursor: pointer;
   margin-top: 0.5rem;
   transition: background 0.2s;
+  min-width: 110px;
 }
 
 .cansu-form button:hover {
   background: #1e3a8a;
 }
 
-.cansu-form button[type="button"] {
+.cansu-form button[type="button"],
+.cansu-form .action-btn.delete {
   background: #d32f2f;
   margin-left: 8px;
+}
+
+.cansu-form button[type="button"]:hover,
+.cansu-form .action-btn.delete:hover {
+  background: #b71c1c;
 }
 
 .cansu-table {
@@ -135,20 +191,23 @@
 }
 
 @media (max-width: 700px) {
-  .cansu-table, .cansu-form {
-    font-size: 15px;
-  }
-  .cansu-form, .cansu-table {
+  .cansu-form {
     max-width: 98vw;
     padding: 1.2rem 0.5rem;
+    font-size: 15px;
+  }
+  .cansu-form-row {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
 
 @media (max-width: 600px) {
-  .cansu-list-page {
-    padding: 0.5rem 0;
+  .cansu-form {
+    padding: 0.7rem 0.2rem;
     border-radius: 0;
     box-shadow: none;
+    font-size: 0.93rem;
   }
   .cansu-table, .cansu-table th, .cansu-table td {
     font-size: 0.93rem;

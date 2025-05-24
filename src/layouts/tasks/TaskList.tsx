@@ -213,7 +213,8 @@ const TaskList: React.FC = () => {
     setDetailError(null);
     setTaskDetail(null);
     try {
-      const res = await axios.get(`/chitietnhiemvu?MaNhiemVu=${maNhiemVu}`);
+      // Sử dụng endpoint mới để lấy chi tiết nhiệm vụ (bao gồm nộp bài)
+      const res = await axios.get(`/nhiemvu/${maNhiemVu}/chitiet`);
       setTaskDetail(res.data);
     } catch (err: any) {
       setDetailError(err.response?.data?.message || 'Không thể tải chi tiết nhiệm vụ.');
@@ -221,21 +222,33 @@ const TaskList: React.FC = () => {
     setDetailLoading(false);
   };
 
-  // Xử lý sửa nhiệm vụ
-  const handleEdit = (task: Task) => {
-    setEditId(task.MaNhiemVu);
+  // Thêm/sửa nhiệm vụ: dùng chung form, đồng bộ state khi sửa hoặc thêm mới
+  const openForm = (task?: Task | null) => {
     setShowForm(true);
-    setForm({
-      TieuDe: task.TieuDe,
-      MoTa: task.MoTa,
-      HanHoanThanh: task.HanHoanThanh?.slice(0, 10),
-      DoUuTien: task.DoUuTien,
-      MaLop: task.MaLop,
-      TepDinhKem: null
-    });
-    setFile(null);
     setFormError(null);
     setSuccessMsg(null);
+    setFile(null);
+    if (task) {
+      // Sửa nhiệm vụ
+      setEditId(task.MaNhiemVu);
+      setForm({
+        TieuDe: task.TieuDe,
+        MoTa: task.MoTa,
+        HanHoanThanh: task.HanHoanThanh?.slice(0, 10),
+        DoUuTien: task.DoUuTien,
+        MaLop: task.MaLop,
+        TepDinhKem: null
+      });
+    } else {
+      // Thêm mới nhiệm vụ
+      setEditId(null);
+      setForm(emptyForm);
+    }
+  };
+
+  // Xử lý sửa nhiệm vụ
+  const handleEdit = (task: Task) => {
+    openForm(task);
   };
 
   // Xử lý xóa nhiệm vụ (không reset form thêm/sửa)
@@ -291,45 +304,87 @@ const TaskList: React.FC = () => {
       </div>
       <h2>Danh sách nhiệm vụ</h2>
       {successMsg && <div className="form-success">{successMsg}</div>}
-      <button className="action-btn" onClick={() => setShowForm(true)}>
+      <button className="action-btn" onClick={() => openForm(null)}>
         <i className="fas fa-plus"></i> Thêm nhiệm vụ mới
       </button>
       {showForm && (
-        <form className="task-form" onSubmit={handleFormSubmit} style={{ margin: 16, padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-          <h3>{editId ? 'Cập nhật nhiệm vụ' : 'Thêm nhiệm vụ mới'}</h3>
-          <input name="TieuDe" value={form.TieuDe || ''} onChange={handleFormChange} placeholder="Tên nhiệm vụ" required />
-          <textarea name="MoTa" value={form.MoTa || ''} onChange={handleFormChange} placeholder="Mô tả nhiệm vụ" rows={3} required />
-          <input name="HanHoanThanh" type="date" value={form.HanHoanThanh?.slice(0, 10) || ''} onChange={handleFormChange} required />
-          <select name="DoUuTien" value={form.DoUuTien || ''} onChange={handleFormChange} required>
-            <option value="">Chọn độ ưu tiên</option>
-            <option value="Cao">Cao</option>
-            <option value="Trung bình">Trung bình</option>
-            <option value="Thấp">Thấp</option>
-          </select>
-          <select
-            name="MaLop"
-            value={form.MaLop || ''}
-            onChange={handleFormChange}
-            required
-          >
-            <option value="">--Chọn lớp--</option>
-            {classes.map(lop => (
-              <option key={lop.MaLop} value={lop.MaLop}>
-                {lop.TenLop}
-              </option>
-            ))}
-          </select>
-          <input
-            type="file"
-            name="TepDinhKem"
-            accept="*"
-            onChange={handleFileChange}
-          />
+        <form className="task-form" onSubmit={handleFormSubmit}>
+          <h3 className="task-form-title">
+            {editId ? 'Cập nhật nhiệm vụ' : 'Thêm nhiệm vụ mới'}
+          </h3>
+          <div className="task-form-group">
+            <input
+              name="TieuDe"
+              value={form.TieuDe || ''}
+              onChange={handleFormChange}
+              placeholder="Tên nhiệm vụ"
+              required
+              autoFocus
+            />
+          </div>
+          <div className="task-form-group">
+            <textarea
+              name="MoTa"
+              value={form.MoTa || ''}
+              onChange={handleFormChange}
+              placeholder="Mô tả nhiệm vụ"
+              rows={3}
+              required
+              style={{ resize: 'vertical', minHeight: 60 }}
+            />
+          </div>
+          <div className="task-form-row">
+            <input
+              name="HanHoanThanh"
+              type="date"
+              value={form.HanHoanThanh?.slice(0, 10) || ''}
+              onChange={handleFormChange}
+              required
+              placeholder="Hạn hoàn thành"
+            />
+            <select
+              name="DoUuTien"
+              value={form.DoUuTien || ''}
+              onChange={handleFormChange}
+              required
+            >
+              <option value="">Chọn độ ưu tiên</option>
+              <option value="Cao">Cao</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Thấp">Thấp</option>
+            </select>
+          </div>
+          <div className="task-form-group">
+            <select
+              name="MaLop"
+              value={form.MaLop || ''}
+              onChange={handleFormChange}
+              required
+            >
+              <option value="">--Chọn lớp--</option>
+              {classes.map(lop => (
+                <option key={lop.MaLop} value={lop.MaLop}>
+                  {lop.TenLop}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="task-form-group">
+            <input
+              type="file"
+              name="TepDinhKem"
+              accept="*"
+              onChange={handleFileChange}
+              style={{ marginTop: 4 }}
+            />
+          </div>
           {formError && <div className="form-error" style={{ marginBottom: 8 }}>{formError}</div>}
-          <button type="submit" className="action-btn">
-            <i className={editId ? "fas fa-save" : "fas fa-save"}></i> {editId ? "Lưu cập nhật" : "Lưu"}
-          </button>
-          <button type="button" className="action-btn delete" style={{ marginLeft: 8 }} onClick={handleCancel}>Hủy</button>
+          <div className="task-form-actions">
+            <button type="submit" className="action-btn">
+              <i className={editId ? "fas fa-save" : "fas fa-save"}></i> {editId ? "Lưu cập nhật" : "Lưu"}
+            </button>
+            <button type="button" className="action-btn delete" onClick={handleCancel}>Hủy</button>
+          </div>
         </form>
       )}
       <div className="task-table-wrap">
@@ -377,7 +432,7 @@ const TaskList: React.FC = () => {
                     {task.TepDinhKem
                       ? (
                         <a
-                          href={task.TepDinhKem.startsWith('http') ? task.TepDinhKem : `http://localhost:8080/uploads/${task.TepDinhKem.replace(/^\/?uploads\//, '')}`}
+                          href={task.TepDinhKem.startsWith('http') ? task.TepDinhKem : `http://localhost:8080/uploads/${task.TepDinhKem.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{ color: '#2563eb', textDecoration: 'underline', fontSize: 15 }}
@@ -405,7 +460,7 @@ const TaskList: React.FC = () => {
                     <button
                       className="action-btn"
                       title="Sửa"
-                      onClick={() => handleEdit(task)}
+                      onClick={() => openForm(task)}
                       style={{ marginLeft: 4 }}
                     >
                       <i className="fas fa-edit"></i>
@@ -436,7 +491,8 @@ const TaskList: React.FC = () => {
             zIndex: 1000,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            overflow: 'auto' // <-- enable scroll for modal background
           }}
           onClick={() => {
             setSelectedTask(null);
@@ -450,9 +506,13 @@ const TaskList: React.FC = () => {
               borderRadius: 10,
               boxShadow: '0 4px 24px #8884',
               padding: 32,
-              minWidth: 320,
-              maxWidth: 480,
-              position: 'relative'
+              minWidth: 340,
+              maxWidth: 1200,
+              width: '98vw',
+              position: 'relative',
+              overflowX: 'auto',
+              maxHeight: '90vh', // <-- limit modal height
+              overflowY: 'auto'  // <-- enable scroll for modal content
             }}
             onClick={e => e.stopPropagation()}
           >
@@ -471,32 +531,119 @@ const TaskList: React.FC = () => {
             <h3 style={{ marginBottom: 16 }}>Chi tiết nhiệm vụ</h3>
             {detailLoading && <div>Đang tải chi tiết...</div>}
             {detailError && <div className="form-error">{detailError}</div>}
-            {taskDetail && (
-              <>
-                <p><b>Tên nhiệm vụ:</b> {taskDetail.TieuDe}</p>
-                <p><b>Mô tả:</b> {taskDetail.MoTa}</p>
-                <p><b>Hạn hoàn thành:</b> {taskDetail.HanHoanThanh ? new Date(taskDetail.HanHoanThanh).toLocaleDateString('vi-VN') : ''}</p>
-                <p><b>Mức độ ưu tiên:</b> {taskDetail.DoUuTien}</p>
-                <p><b>Tên lớp:</b> {taskDetail.TenLop}</p>
-                <p><b>Ngày tạo:</b> {taskDetail.NgayTao ? new Date(taskDetail.NgayTao).toLocaleDateString('vi-VN') : ''}</p>
-                <p>
+            {/* Hiển thị thông tin nhiệm vụ */}
+            {selectedTask && (
+              <div style={{
+                marginBottom: 18,
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 0,
+                minWidth: 600,
+                maxWidth: 1100
+              }}>
+                <div style={{ padding: '6px 0' }}><b>Tên nhiệm vụ:</b></div>
+                <div style={{ padding: '6px 0' }}>{selectedTask.TieuDe}</div>
+                <div style={{ padding: '6px 0' }}><b>Tên lớp:</b></div>
+                <div style={{ padding: '6px 0' }}>{selectedTask.TenLop}</div>
+                <div style={{ padding: '6px 0' }}><b>Mức độ ưu tiên:</b></div>
+                <div style={{ padding: '6px 0' }}>{selectedTask.DoUuTien}</div>
+                <div style={{ padding: '6px 0' }}><b>Hạn hoàn thành:</b></div>
+                <div style={{ padding: '6px 0' }}>{selectedTask.HanHoanThanh ? new Date(selectedTask.HanHoanThanh).toLocaleDateString('vi-VN') : ''}</div>
+                <div style={{ padding: '6px 0' }}><b>Ngày tạo:</b></div>
+                <div style={{ padding: '6px 0' }}>{selectedTask.NgayTao ? new Date(selectedTask.NgayTao).toLocaleDateString('vi-VN') : ''}</div>
+                <div style={{ padding: '6px 0' }}><b>Người giao:</b></div>
+                <div style={{ padding: '6px 0' }}>{selectedTask.TenNguoiGiao || ''}</div>
+                <div style={{ gridColumn: '1 / span 2', padding: '6px 0' }}>
+                  <b>Mô tả:</b>
+                  <div style={{
+                    background: '#f7f9fc',
+                    borderRadius: 6,
+                    padding: '8px 12px',
+                    marginTop: 4,
+                    color: '#333',
+                    fontWeight: 400,
+                    whiteSpace: 'pre-line'
+                  }}>
+                    {selectedTask.MoTa}
+                  </div>
+                </div>
+                <div style={{ gridColumn: '1 / span 2', padding: '6px 0' }}>
                   <b>Tệp đính kèm:</b>{' '}
-                  {taskDetail.TepDinhKem
+                  {selectedTask.TepDinhKem
                     ? (
                       <a
-                        href={taskDetail.TepDinhKem.startsWith('http') ? taskDetail.TepDinhKem : `http://localhost:8080/uploads/${taskDetail.TepDinhKem.replace(/^\/?uploads\//, '')}`}
+                        href={selectedTask.TepDinhKem.startsWith('http') ? selectedTask.TepDinhKem : `http://localhost:8080/uploads/${selectedTask.TepDinhKem.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        style={{ color: '#2563eb', textDecoration: 'underline', marginLeft: 6 }}
                       >
                         Xem file
                       </a>
                     )
-                    : <span style={{ color: '#888' }}>Không có</span>
+                    : <span style={{ color: '#888', marginLeft: 6 }}>Không có</span>
                   }
-                </p>
-                <p><b>Người giao:</b> {selectedTask.TenNguoiGiao || ''}</p>
-              </>
+                </div>
+              </div>
             )}
+            {/* Hiển thị danh sách chi tiết nộp bài */}
+            {Array.isArray(taskDetail) && taskDetail.length > 0 && (
+              <div style={{ marginBottom: 18, width: '100%', overflowX: 'auto' }}>
+                <h4 style={{ margin: '10px 0 8px 0', color: '#2563eb' }}>Danh sách nộp bài</h4>
+                <div style={{ width: '100%', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, minWidth: 900 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left', padding: 4 }}>Họ tên</th>
+                        <th style={{ textAlign: 'left', padding: 4 }}>Vai trò</th>
+                        <th style={{ textAlign: 'left', padding: 4 }}>Email</th>
+                        <th style={{ textAlign: 'left', padding: 4 }}>SĐT</th>
+                        <th style={{ textAlign: 'left', padding: 4 }}>Trạng thái</th>
+                        <th style={{ textAlign: 'left', padding: 4 }}>Ghi chú</th>
+                        <th style={{ textAlign: 'left', padding: 4 }}>Tệp kết quả</th>
+                        <th style={{ textAlign: 'left', padding: 4 }}>Ngày cập nhật</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {taskDetail.map((ct: any) => (
+                        <tr key={ct.MaChiTietNhiemVu}>
+                          <td style={{ padding: 4 }}>{ct.HoTen || ''}</td>
+                          <td style={{ padding: 4 }}>{ct.VaiTro || ''}</td>
+                          <td style={{ padding: 4 }}>{ct.Email || ''}</td>
+                          <td style={{ padding: 4 }}>{ct.SoDienThoai || ''}</td>
+                          <td style={{ padding: 4 }}>
+                            {ct.TepKetQua
+                              ? <span style={{ color: '#2563eb', fontWeight: 600 }}>Đã nộp bài</span>
+                              : <span style={{ color: '#888' }}>Chưa nộp</span>
+                            }
+                          </td>
+                          <td style={{ padding: 4 }}>{ct.GhiChuTienDo || ''}</td>
+                          <td style={{ padding: 4 }}>
+                            {ct.TepKetQua
+                              ? (
+                                <a
+                                  href={ct.TepKetQua.startsWith('http') ? ct.TepKetQua : `http://localhost:8080/uploads/${ct.TepKetQua.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Xem file
+                                </a>
+                              )
+                              : <span style={{ color: '#888' }}>Chưa nộp</span>
+                            }
+                          </td>
+                          <td style={{ padding: 4 }}>
+                            {ct.NgayCapNhat ? new Date(ct.NgayCapNhat).toLocaleString('vi-VN') : ''}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            {/* Form nộp bài */}
+            <hr style={{ margin: '18px 0 10px 0' }} />
+            <NopBaiForm maNhiemVu={selectedTask.MaNhiemVu} onSuccess={() => fetchTaskDetail(selectedTask.MaNhiemVu)} />
           </div>
         </div>
       )}
@@ -505,3 +652,133 @@ const TaskList: React.FC = () => {
 };
 
 export default TaskList;
+
+function NopBaiForm({ maNhiemVu, onSuccess }: { maNhiemVu: number, onSuccess?: () => void }) {
+  const { user } = useUser();
+  const [file, setFile] = useState<File | null>(null);
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    } else {
+      setFile(null);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg(null);
+    if (!file) {
+      setMsg('Vui lòng chọn file để nộp.');
+      return;
+    }
+    if (!user?.userId) {
+      setMsg('Không xác định được người dùng.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('TepNop', file);
+      formData.append('MaNguoiDung', user.userId.toString());
+      formData.append('GhiChu', note);
+      await axios.post(`/nhiemvu/${maNhiemVu}/nopbai`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setMsg('✅ Nộp bài thành công!');
+      setFile(null);
+      setNote('');
+      if (onSuccess) onSuccess();
+    } catch (err: any) {
+      setMsg(
+        err?.response?.data?.message ||
+        (typeof err?.response?.data === 'string' ? err.response.data : '') ||
+        '❌ Lỗi khi nộp bài. Vui lòng thử lại!'
+      );
+    }
+    setLoading(false);
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        marginTop: 8,
+        background: '#fff',
+        borderRadius: 10,
+        boxShadow: '0 1px 4px #2563eb11',
+        padding: '18px 18px 10px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12
+      }}
+    >
+      <div style={{ marginBottom: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ fontWeight: 600, color: '#2563eb', marginBottom: 2 }}>Nộp bài:</label>
+        <input
+          type="file"
+          onChange={handleFileChange}
+          style={{
+            border: '1px solid #cbd5e1',
+            borderRadius: 7,
+            padding: '7px 10px',
+            background: '#f9fafe',
+            fontSize: 15
+          }}
+        />
+      </div>
+      <div style={{ marginBottom: 4 }}>
+        <input
+          type="text"
+          placeholder="Ghi chú (nếu có)"
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '0.5rem',
+            borderRadius: 7,
+            border: '1px solid #cbd5e1',
+            fontSize: 15,
+            background: '#f9fafe'
+          }}
+        />
+      </div>
+      {msg && (
+        <div
+          style={{
+            color: msg.startsWith('✅') ? '#2563eb' : '#d32f2f',
+            marginBottom: 6,
+            background: msg.startsWith('✅') ? '#e8f0fe' : '#ffe5e5',
+            borderRadius: 6,
+            padding: '6px 10px',
+            fontWeight: 500
+          }}
+        >
+          {msg}
+        </div>
+      )}
+      <button
+        type="submit"
+        className="action-btn"
+        disabled={loading}
+        style={{
+          background: '#2563eb',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 8,
+          padding: '0.5rem 1.2rem',
+          fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          fontSize: 16,
+          marginTop: 2,
+          transition: 'background 0.2s'
+        }}
+      >
+        <i className="fas fa-upload"></i> {loading ? 'Đang nộp...' : 'Nộp bài'}
+      </button>
+    </form>
+  );
+}

@@ -129,6 +129,110 @@
   to   { opacity: 1; transform: translateY(0);}
 }
 
+.task-form {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(30,58,138,0.08);
+  padding: 24px 24px 18px 24px;
+  max-width: 500px;
+  margin: 0 auto 24px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.task-form h3 {
+  text-align: center;
+  margin-bottom: 10px;
+  color: #2563eb;
+  letter-spacing: 1px;
+  font-size: 1.18rem;
+  font-weight: 600;
+}
+
+.task-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.task-form-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.task-form-row > * {
+  flex: 1;
+}
+
+.task-form input,
+.task-form select,
+.task-form textarea {
+  padding: 0.55rem 0.9rem;
+  border-radius: 7px;
+  border: 1px solid #cbd5e1;
+  font-size: 1.05rem;
+  background: #f9fafe;
+  transition: border 0.18s;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 0.2rem;
+}
+
+.task-form input:focus,
+.task-form select:focus,
+.task-form textarea:focus {
+  border: 1.5px solid #2563eb;
+  outline: none;
+  background: #fff;
+}
+
+.task-form .form-error {
+  background: #ffe5e5;
+  color: #d32f2f;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.task-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.task-form button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s;
+  min-width: 110px;
+}
+
+.task-form button:hover {
+  background: #1e3a8a;
+}
+
+.task-form button[type="button"],
+.task-form .action-btn.delete {
+  background: #d32f2f;
+  margin-left: 8px;
+}
+
+.task-form button[type="button"]:hover,
+.task-form .action-btn.delete:hover {
+  background: #b71c1c;
+}
+
 @media (max-width: 900px) {
   .task-list-page {
     padding: 1.2rem 0.3rem;
@@ -149,6 +253,15 @@
     border-radius: 0;
     box-shadow: none;
   }
+  .task-form {
+    max-width: 98vw;
+    padding: 1.2rem 0.5rem;
+    font-size: 15px;
+  }
+  .task-form-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
 
 @media (max-width: 600px) {
@@ -162,5 +275,11 @@
   }
   .task-table th, .task-table td {
     padding: 0.45rem 0.3rem;
+  }
+  .task-form {
+    padding: 0.7rem 0.2rem;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 0.93rem;
   }
 }

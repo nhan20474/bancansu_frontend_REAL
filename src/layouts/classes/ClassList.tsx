@@ -35,6 +35,10 @@ function ClassList() {
   const [form, setForm] = useState<Partial<ClassItem>>(emptyClass);
   const [teachers, setTeachers] = useState<{ id: number; name: string }[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   // Lấy danh sách lớp học (fix: luôn trả về mảng, không bị lỗi khi backend trả về object hoặc null)
   const fetchData = async () => {
@@ -155,6 +159,25 @@ function ClassList() {
     }
   };
 
+  // Xem thành viên lớp
+  const handleViewMembers = async (lop: ClassItem) => {
+    setSelectedClass(lop);
+    setShowMembersModal(true);
+    setLoadingMembers(true);
+    try {
+      // Sửa lại endpoint, bỏ bớt '/api' nếu axios đã cấu hình baseURL là /api
+      const res = await axios.get(`/lop/${lop.MaLop}/thanhvien`);
+      let data = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
+      data = data.filter((m: any) => m && m.MaNguoiDung);
+      // Thêm log để debug
+      console.log('Thành viên lớp:', data);
+      setMembers(data);
+    } catch {
+      setMembers([]);
+    }
+    setLoadingMembers(false);
+  };
+
   if (loading) return <div className="class-list-page">Đang tải danh sách lớp học...</div>;
   if (error) return <div className="class-list-page" style={{ color: 'red' }}>{error}</div>;
 
@@ -164,40 +187,78 @@ function ClassList() {
       {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
       {showForm && (
         <form className="class-form" onSubmit={handleSubmit}>
-          <input name="MaLopHoc" value={form.MaLopHoc || ''} onChange={handleChange} placeholder="Mã lớp học" required />
-          <input name="TenLop" value={form.TenLop || ''} onChange={handleChange} placeholder="Tên lớp" required />
-          <input name="ChuyenNganh" value={form.ChuyenNganh || ''} onChange={handleChange} placeholder="Chuyên ngành" required />
-          <input name="KhoaHoc" value={form.KhoaHoc || ''} onChange={handleChange} placeholder="Khóa học" required />
-          <select
-            name="GiaoVien"
-            value={form.GiaoVien !== undefined && form.GiaoVien !== null ? String(form.GiaoVien) : ''}
-            onChange={handleChange}
-            required
-          >
-            <option value="">-- Chọn giáo viên chủ nhiệm --</option>
-            {teachers.length === 0 ? (
-              <option value="" disabled>Không có giáo viên</option>
-            ) : (
-              teachers.map(gv => (
-                <option key={gv.id} value={String(gv.id)}>
-                  {gv.id} - {gv.name}
-                </option>
-              ))
-            )}
-          </select>
-          <button type="submit" className="action-btn" title={editing ? "Cập nhật" : "Thêm mới"}>
-            <i className={editing ? "fas fa-save" : "fas fa-plus"}></i>
-          </button>
-          {editing && (
+          <h3 className="class-form-title">
+            {editing ? 'Cập nhật lớp học' : 'Thêm lớp học mới'}
+          </h3>
+          <div className="class-form-group">
+            <input
+              name="MaLopHoc"
+              value={form.MaLopHoc || ''}
+              onChange={handleChange}
+              placeholder="Mã lớp học"
+              required
+              autoFocus
+            />
+          </div>
+          <div className="class-form-group">
+            <input
+              name="TenLop"
+              value={form.TenLop || ''}
+              onChange={handleChange}
+              placeholder="Tên lớp"
+              required
+            />
+          </div>
+          <div className="class-form-group">
+            <input
+              name="ChuyenNganh"
+              value={form.ChuyenNganh || ''}
+              onChange={handleChange}
+              placeholder="Chuyên ngành"
+              required
+            />
+          </div>
+          <div className="class-form-group">
+            <input
+              name="KhoaHoc"
+              value={form.KhoaHoc || ''}
+              onChange={handleChange}
+              placeholder="Khóa học"
+              required
+            />
+          </div>
+          <div className="class-form-group">
+            <select
+              name="GiaoVien"
+              value={form.GiaoVien !== undefined && form.GiaoVien !== null ? String(form.GiaoVien) : ''}
+              onChange={handleChange}
+              required
+            >
+              <option value="">-- Chọn giáo viên chủ nhiệm --</option>
+              {teachers.length === 0
+                ? <option value="" disabled>Không có giáo viên</option>
+                : teachers.map(gv => (
+                    <option key={gv.id} value={String(gv.id)}>
+                      {gv.id} - {gv.name}
+                    </option>
+                  ))
+              }
+            </select>
+          </div>
+          {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
+          <div className="class-form-actions">
+            <button type="submit" className="action-btn">
+              <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu cập nhật" : "Thêm mới"}
+            </button>
             <button
               type="button"
               className="action-btn delete"
               title="Hủy"
               onClick={handleCancel}
             >
-              <i className="fas fa-times"></i>
+              <i className="fas fa-times"></i> Hủy
             </button>
-          )}
+          </div>
         </form>
       )}
       <button className="action-btn" title="Thêm mới" onClick={handleAddNew}>
@@ -246,11 +307,78 @@ function ClassList() {
                 >
                   <i className="fas fa-trash-alt"></i>
                 </button>
+                <button
+                  className="action-btn"
+                  title="Xem thành viên"
+                  style={{ marginLeft: 4 }}
+                  onClick={() => handleViewMembers(item)}
+                >
+                  <i className="fas fa-users"></i>
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {/* Modal xem thành viên lớp */}
+      {showMembersModal && (
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.2)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}
+          onClick={() => setShowMembersModal(false)}
+        >
+          <div
+            style={{
+              background: '#fff', borderRadius: 10, boxShadow: '0 4px 24px #8884',
+              padding: 24, minWidth: 320, maxWidth: 500, position: 'relative'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="action-btn delete"
+              style={{ position: 'absolute', top: 10, right: 10 }}
+              onClick={() => setShowMembersModal(false)}
+              title="Đóng"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+            <h3 style={{ marginBottom: 12 }}>
+              Thành viên lớp: {selectedClass?.TenLop}
+            </h3>
+            {loadingMembers ? (
+              <div style={{ color: '#888', textAlign: 'center' }}>Đang tải thành viên...</div>
+            ) : (!members || members.length === 0) ? (
+              <div style={{ color: '#888', textAlign: 'center' }}>Không có thành viên.</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: 4 }}>Mã SV</th>
+                    <th style={{ textAlign: 'left', padding: 4 }}>Họ tên</th>
+                    <th style={{ textAlign: 'left', padding: 4 }}>Vai trò</th>
+                    <th style={{ textAlign: 'left', padding: 4 }}>Email</th>
+                    <th style={{ textAlign: 'left', padding: 4 }}>SĐT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((m: any) => (
+                    <tr key={m.MaNguoiDung}>
+                      <td style={{ padding: 4 }}>{m.MaSoSV || m.MaNguoiDung}</td>
+                      <td style={{ padding: 4 }}>{m.HoTen || ''}</td>
+                      <td style={{ padding: 4 }}>{m.VaiTro || ''}</td>
+                      <td style={{ padding: 4 }}>{m.Email || ''}</td>
+                      <td style={{ padding: 4 }}>{m.SoDienThoai || ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
