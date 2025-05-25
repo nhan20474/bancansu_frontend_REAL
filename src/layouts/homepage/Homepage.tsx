@@ -36,7 +36,18 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className="homepage">
+    <div className="homepage hutech-homepage-bg">
+      <div className="hutech-header">
+        <img
+          src="https://hutech.edu.vn/images/logo.png"
+          alt="HUTECH Logo"
+          className="hutech-logo"
+        />
+        <div className="hutech-header-text">
+          <div className="hutech-title">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ TP.HCM (HUTECH)</div>
+          <div className="hutech-slogan">Hệ thống quản lý cán sự lớp</div>
+        </div>
+      </div>
       <div className="homepage-carousel-container">
         {/* Bootstrap Carousel */}
         <div id="demo" className="carousel slide" data-bs-ride="carousel">
@@ -67,48 +78,15 @@ const HomePage = () => {
           </button>
         </div>
       </div>
-      <div className="homepage-content">
+      <div className="homepage-content hutech-content">
         <h1>Chào mừng bạn đến với hệ thống quản lý cán sự lớp HUTECH</h1>
         <p>
           Quản lý cán sự, lớp học, sinh viên, thông báo và nhiều chức năng khác một cách dễ dàng, hiện đại và trực quan.
         </p>
-        {/* Thêm các nội dung, shortcut, widget khác nếu muốn */}
       </div>
-      <div className="homepage-container">
-        <div className="welcome-text">
-          Chào mừng bạn đến với hệ thống quản lý lớp học BCS!
-        </div>
-        <div className="grid-layout">
-          <div className="card">
-            <h4>Tổng số lớp</h4>
-            <div className="count">{loading ? '...' : classCount}</div>
-            <a href="/classes">Xem chi tiết</a>
-          </div>
-          <div className="card">
-            <h4>Tổng số sinh viên</h4>
-            <div className="count">{loading ? '...' : studentCount}</div>
-            <a href="/students">Xem chi tiết</a>
-          </div>
-          <div className="card">
-            <h4>Cán sự</h4>
-            <div className="count">{loading ? '...' : cansuCount}</div>
-            <a href="/cansu">Xem chi tiết</a>
-          </div>
-          <div className="card notify">
-            <h4>Thông báo mới</h4>
-            <ul>
-              {loading
-                ? <li>Đang tải...</li>
-                : notifications.length === 0
-                  ? <li>Không có thông báo mới</li>
-                  : notifications.map((item, idx) => <li key={idx}>{item}</li>)
-              }
-            </ul>
-            <a href="/notifications">Xem tất cả</a>
-          </div>
-        </div>
+      
       </div>
-    </div>
+    
   );
 };
 

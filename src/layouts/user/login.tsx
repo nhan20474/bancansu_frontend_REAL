@@ -95,8 +95,7 @@ const Login = () => {
               className="toggle-password"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-              {/* Nếu lỗi icon: thay bằng {showPassword ? '🙈' : '👁️'} */}
+              {showPassword ? '🙈' : '👁️'}
             </button>
           </div>
         </div>

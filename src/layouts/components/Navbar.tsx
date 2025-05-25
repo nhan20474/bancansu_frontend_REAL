@@ -85,20 +85,30 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
             style={{ cursor: 'pointer', fontSize: '1.3rem', color: '#1e3a8a', marginRight: 16 }}
             title="Thông báo"
           />
-          {hasNewNotification && (
+          {/* Hiển thị số thông báo mới */}
+          {notifications.length > 0 && (
             <span
               style={{
                 position: 'absolute',
-                top: 2,
-                right: 2,
-                width: 12,
-                height: 12,
+                top: -2,
+                right: 6,
+                minWidth: 18,
+                height: 18,
                 background: '#d32f2f',
+                color: '#fff',
                 borderRadius: '50%',
+                fontSize: 12,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 border: '2px solid #fff',
-                display: 'inline-block'
+                zIndex: 2,
+                padding: '0 5px'
               }}
-            ></span>
+            >
+              {notifications.length}
+            </span>
           )}
           {showDropdown && (
             <div className="notification-dropdown">
