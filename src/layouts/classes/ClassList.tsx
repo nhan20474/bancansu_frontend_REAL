@@ -151,11 +151,25 @@ function ClassList() {
     }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
+    if (!id) {
+      setError('Không xác định được lớp để xóa.');
+      return;
+    }
     if (window.confirm('Bạn có chắc chắn muốn xóa lớp học này?')) {
-      axios.delete(`/lop/${id}`)
-        .then(() => fetchData())
-        .catch(() => setError('Lỗi xóa lớp học'));
+      setError(null);
+      try {
+        // Một số backend yêu cầu gửi đúng kiểu số, thử ép kiểu id về số
+        await axios.delete(`/lop/${Number(id)}`);
+        // Nếu backend yêu cầu truyền id qua params khác, ví dụ: await axios.delete('/lop', { params: { id } });
+        await fetchData();
+      } catch (err: any) {
+        setError(
+          err.response?.data?.message ||
+          (typeof err.response?.data === 'string' ? err.response.data : '') ||
+          'Lỗi xóa lớp học'
+        );
+      }
     }
   };
 
