@@ -114,14 +114,21 @@
   background: #b71c1c;
 }
 
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(30,58,138,0.08);
+  margin-top: 24px;
+}
+
 .cansu-table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(30,58,138,0.08);
   overflow: hidden;
-  margin-top: 24px;
+  margin-top: 0;
+  min-width: 700px;
 }
 
 .cansu-table th, .cansu-table td {
@@ -214,5 +221,22 @@
   }
   .cansu-table th, .cansu-table td {
     padding: 0.45rem 0.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cansu-table {
+    min-width: 600px;
+    font-size: 0.8rem;
+  }
+  
+  .cansu-table th, .cansu-table td {
+    padding: 0.35rem 0.2rem;
+    font-size: 0.8rem;
+  }
+  
+  .action-btn {
+    font-size: 1rem;
+    padding: 2px 6px;
   }
 }
