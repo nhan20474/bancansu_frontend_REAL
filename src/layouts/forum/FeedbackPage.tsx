@@ -11,6 +11,10 @@ interface Officer {
   MaNguoiDung: number;
   HoTen: string;
   ChucVu?: string;
+  Lop?: string;
+  // Thêm các trường cho dữ liệu mới từ API
+  TenCanSu?: string;
+  TenLop?: string;
 }
 
 interface FeedbackItem {
@@ -22,6 +26,8 @@ interface FeedbackItem {
   TieuChi: string;
   NoiDung: string;
   NgayGui: string;
+  MucLabel?: string; // Đã thêm trường này để nhận nhãn mức độ từ backend
+  AnDanh?: boolean; // Thêm trường này để hỗ trợ ẩn danh
 }
 
 // Danh sách tiêu chí đánh giá với tông màu tối giản
@@ -44,6 +50,7 @@ const FeedbackPage: React.FC = () => {
   const [dataLoading, setDataLoading] = useState(true);
   const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackItem[]>([]);
   const [feedbackStats, setFeedbackStats] = useState({ total: 0, avgRating: 0 });
+  const [anonymous, setAnonymous] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -65,54 +72,61 @@ const FeedbackPage: React.FC = () => {
 
   const loadOfficers = async () => {
     try {
-      // Thử endpoint thống kê trước
-      const statsResponse = await axios.get(`${API_BASE}/thongke`);
-      if (statsResponse.data?.diemTrungBinhCanSu) {
-        const officersFromStats = statsResponse.data.diemTrungBinhCanSu.map((cs: any) => ({
-          MaNguoiDung: cs.MaNguoiDung,
-          HoTen: cs.HoTen,
-          ChucVu: 'Cán sự'
+      // Lấy danh sách cán sự từ backend (role=cansu)
+      const response = await axios.get(`${API_BASE}/api/cansu`);
+      if (response.data && Array.isArray(response.data)) {
+        // Chuẩn hóa dữ liệu officers để luôn có HoTen
+        const officersData = response.data.map((o: any) => ({
+          ...o,
+          HoTen: o.HoTen || o.TenCanSu || '', // Ưu tiên HoTen, fallback TenCanSu
+          ChucVu: o.ChucVu,
+          MaNguoiDung: o.MaNguoiDung,
         }));
-        setOfficers(officersFromStats);
-        return;
+        setOfficers(officersData);
+      } else {
+        setOfficers([]);
       }
     } catch (error) {
-      console.error('Error loading from stats API:', error);
+      console.error('Error loading officers:', error);
+      setOfficers([]);
     }
-
-    // Fallback data
-    const mockOfficers: Officer[] = [
-      { MaNguoiDung: 3, HoTen: 'Nguyễn Trung Kiên', ChucVu: 'Lớp trưởng' },
-      { MaNguoiDung: 4, HoTen: 'Hà Thái Cơ', ChucVu: 'Cán sự' },
-      { MaNguoiDung: 5, HoTen: 'Huỳnh Minh Toàn', ChucVu: 'Cán sự' },
-      { MaNguoiDung: 6, HoTen: 'Trần Hoàng Huy', ChucVu: 'Cán sự' },
-      { MaNguoiDung: 7, HoTen: 'Nguyễn Phạm Tấn An', ChucVu: 'Cán sự' }
-    ];
-    setOfficers(mockOfficers);
   };
 
   const loadRecentFeedbacks = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/danhgia`);
-      
+      const response = await axios.get(`${API_BASE}/api/danhgia`);
       if (response.data && Array.isArray(response.data)) {
+        // Đảm bảo mỗi feedback có đủ các trường cần thiết, tránh lỗi khi render
         const recentData = response.data
+          .map((f: any) => ({
+            MaDanhGia: f.MaDanhGia,
+            TenCanSu: f.TenCanSu || '',
+            TieuChi: f.TieuChi || '',
+            NoiDung: f.NoiDung || '',
+            TenNguoiGui: f.TenNguoiGui || 'Ẩn danh',
+            NgayGui: f.NgayGui || '',
+            MucLabel: f.MucLabel || '',
+            // Các trường dưới đây có thể không có trong API, nên để undefined nếu không có
+            NguoiGui: f.NguoiGui,
+            CanSuDuocDanhGia: f.CanSuDuocDanhGia,
+            AnDanh: f.AnDanh !== undefined ? f.AnDanh : (f.TenNguoiGui === 'Ẩn danh')
+          }))
           .sort((a, b) => new Date(b.NgayGui).getTime() - new Date(a.NgayGui).getTime())
           .slice(0, 6);
-        
+
         setRecentFeedbacks(recentData);
-        
+
         const total = recentData.length;
         const ratings = recentData
-          .map(f => getStarsFromCriteria(f.TieuChi))
+          .map(f => getStarsFromCriteria(f.TieuChi, f.MucLabel))
           .filter(r => r > 0);
-        const avgRating = ratings.length > 0 
-          ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length 
+        const avgRating = ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
           : 0;
-        
-        setFeedbackStats({ 
-          total, 
-          avgRating: Math.round(avgRating * 10) / 10 
+
+        setFeedbackStats({
+          total,
+          avgRating: Math.round(avgRating * 10) / 10
         });
       } else {
         setRecentFeedbacks([]);
@@ -120,45 +134,66 @@ const FeedbackPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error loading feedbacks:', error);
-      // Mock data
-      const mockFeedbacks: FeedbackItem[] = [
-        {
-          MaDanhGia: 1,
-          NguoiGui: 4,
-          TenNguoiGui: 'Hà Thái Cơ',
-          CanSuDuocDanhGia: 5,
-          TenCanSu: 'Huỳnh Minh Toàn',
-          TieuChi: 'Tốt',
-          NoiDung: 'Làm việc tích cực, hỗ trợ bạn học tập tốt',
-          NgayGui: new Date().toISOString()
-        }
-      ];
-      setRecentFeedbacks(mockFeedbacks);
-      setFeedbackStats({ total: 1, avgRating: 4.0 });
+      setRecentFeedbacks([]);
+      setFeedbackStats({ total: 0, avgRating: 0 });
     }
   };
 
-  // Utility functions
-  const getStarsFromCriteria = (tieuChi: string): number => {
-    const criteriaMap: { [key: string]: number } = {
-      'Xuất sắc': 5, 'Tốt': 4, 'Khá': 3, 'Trung bình': 2, 'Cần cải thiện': 1,
-      'Tích cực': 4, 'Chăm chỉ': 4, 'Rất tốt': 4, 'Bình thường': 3
+ 
+  const normalizeCriteriaLabel = (tieuChi: string, mucLabel?: string): string => {
+    // Ưu tiên MucLabel nếu hợp lệ
+    const validLabels = ['Cần cải thiện', 'Trung bình', 'Khá', 'Tốt', 'Xuất sắc'];
+    if (mucLabel && validLabels.includes(mucLabel)) return mucLabel;
+
+    // Map các tiêu chí cũ hoặc đặc biệt về nhãn chuẩn
+    const map: { [key: string]: string } = {
+      'Xuất sắc': 'Xuất sắc',
+      'Tốt': 'Tốt',
+      'Khá': 'Khá',
+      'Trung bình': 'Trung bình',
+      'Cần cải thiện': 'Cần cải thiện',
+      'Tích cực': 'Tốt',
+      'Chăm chỉ': 'Tốt',
+      'Rất tốt': 'Tốt',
+      'Bình thường': 'Khá'
     };
-    
-    const oldFormatMatch = tieuChi.match(/Điểm: (\d)/);
-    if (oldFormatMatch) return parseInt(oldFormatMatch[1]);
-    
-    return criteriaMap[tieuChi] || 0;
+    // Nếu là dạng "Điểm: x"
+    const match = tieuChi.match(/Điểm: (\d)/);
+    if (match) {
+      const val = parseInt(match[1]);
+      return validLabels[val - 1] || 'Khá';
+    }
+    return map[tieuChi] || 'Khá';
+  };
+
+  // Lấy số sao từ nhãn chuẩn hóa
+  const getStarsFromCriteria = (tieuChi: string, mucLabel?: string): number => {
+    const label = normalizeCriteriaLabel(tieuChi, mucLabel);
+    const criteriaMap: { [key: string]: number } = {
+      'Cần cải thiện': 1,
+      'Trung bình': 2,
+      'Khá': 3,
+      'Tốt': 4,
+      'Xuất sắc': 5
+    };
+    return criteriaMap[label] || 3;
+  };
+
+  // Lấy màu sắc từ nhãn chuẩn hóa
+  const getCriteriaColor = (tieuChi: string, mucLabel?: string): string => {
+    const stars = getStarsFromCriteria(tieuChi, mucLabel);
+    const criteriaItem = CRITERIA_OPTIONS.find(opt => opt.value === stars);
+    return criteriaItem?.color || '#6b7280';
+  };
+
+  // Hiển thị số sao từ nhãn chuẩn hóa
+  const getStarRating = (tieuChi: string, mucLabel?: string) => {
+    const stars = getStarsFromCriteria(tieuChi, mucLabel);
+    return stars > 0 ? '★'.repeat(stars) + '☆'.repeat(5 - stars) : '📝';
   };
 
   const getCurrentCriteria = () => {
     return CRITERIA_OPTIONS.find(opt => opt.value === criteria) || CRITERIA_OPTIONS[2];
-  };
-
-  const getCriteriaColor = (tieuChi: string): string => {
-    const stars = getStarsFromCriteria(tieuChi);
-    const criteriaItem = CRITERIA_OPTIONS.find(opt => opt.value === stars);
-    return criteriaItem?.color || '#6b7280';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -168,47 +203,72 @@ const FeedbackPage: React.FC = () => {
     setLoading(true);
 
     try {
-      if (!selectedOfficer || !criteria) {
-        setError('Vui lòng chọn cán sự và mức độ đánh giá.');
+      // Nếu gửi ẩn danh thì bắt buộc phải chọn cán sự, mức độ và nhập nhận xét
+      if (anonymous) {
+        if (!selectedOfficer || !criteria || !comment.trim()) {
+          setError('Thiếu thông tin đánh giá.');
+          setLoading(false);
+          return;
+        }
+      } else {
+        // Không ẩn danh thì chỉ cần chọn cán sự và mức độ
+        if (!selectedOfficer || !criteria) {
+          setError('Thiếu thông tin đánh giá.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      const currentCriteria = getCurrentCriteria();
+      if (isNaN(Number(selectedOfficer))) {
+        setError('Vui lòng chọn cán sự hợp lệ.');
         setLoading(false);
         return;
       }
 
-      const currentCriteria = getCurrentCriteria();
+      // Lấy đúng ID người dùng hiện tại khi gửi đánh giá
       const payload = {
-        NguoiGui: 1,
-        CanSuDuocDanhGia: parseInt(selectedOfficer),
+        NguoiGui: anonymous ? null : currentUserId,
+        CanSuDuocDanhGia: Number(selectedOfficer),
         TieuChi: currentCriteria.text,
         NoiDung: comment || `Đánh giá: ${currentCriteria.text}`,
+        AnDanh: anonymous ? true : false
       };
 
-      const response = await axios.post(`${API_BASE}/danhgia`, payload);
-      
-      if (response.data) {
+      // Đổi endpoint sang /api/danhgia cho đồng bộ với backend
+      const response = await axios.post(`${API_BASE}/api/danhgia`, payload);
+
+      if (response.data && response.data.success) {
         setMsg('Đánh giá đã được gửi thành công!');
         setSelectedOfficer('');
         setCriteria(3);
         setComment('');
+        setAnonymous(false);
         await loadRecentFeedbacks();
       } else {
         setError('Có lỗi xảy ra khi gửi đánh giá.');
       }
 
     } catch (err: any) {
-      console.error('Error submitting feedback:', err);
-      setError(err.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
+      // Hiển thị lỗi chi tiết từ backend nếu có
+      setError(err?.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStarRating = (tieuChi: string) => {
-    const stars = getStarsFromCriteria(tieuChi);
-    return stars > 0 ? '★'.repeat(stars) + '☆'.repeat(5 - stars) : '📝';
+  const handleDeleteFeedback = async (feedbackId: number) => {
+    if (!window.confirm('Bạn có chắc muốn xóa đánh giá này?')) return;
+    try {
+      await axios.delete(`${API_BASE}/api/danhgia/${feedbackId}`);
+      await loadRecentFeedbacks();
+    } catch (err) {
+      alert('Không thể xóa đánh giá. Vui lòng thử lại.');
+    }
   };
 
   const getTimeAgo = (dateString: string) => {
-    if (!dateString) return 'Vừa xong';
+    if (!dateString) return '';
     
     const now = new Date();
     const date = new Date(dateString);
@@ -217,7 +277,7 @@ const FeedbackPage: React.FC = () => {
 
     if (diffInDays > 0) return `${diffInDays} ngày trước`;
     if (diffInHours > 0) return `${diffInHours} giờ trước`;
-    return 'Vừa xong';
+    return '';
   };
 
   if (dataLoading) {
@@ -232,6 +292,22 @@ const FeedbackPage: React.FC = () => {
   }
 
   const currentCriteria = getCurrentCriteria();
+
+  // Giả lập id và tên người dùng hiện tại (cần thay bằng dữ liệu thực tế khi có auth)
+  const getCurrentUserId = () => {
+    // Ví dụ: lưu user vào localStorage dạng { MaNguoiDung: 123, ... }
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.MaNguoiDung || user.userId || 1; // fallback 1 nếu không có
+      }
+    } catch {}
+    return 1;
+  };
+
+  const currentUserId = getCurrentUserId();
+  const currentUserName = "Tôi";
 
   return (
     <div className="feedback-page">
@@ -265,10 +341,23 @@ const FeedbackPage: React.FC = () => {
                     </option>
                     {officers.map(o => (
                       <option key={o.MaNguoiDung} value={o.MaNguoiDung}>
-                        {o.HoTen} {o.ChucVu && `(${o.ChucVu})`}
+                        {o.HoTen}{o.ChucVu ? ` (${o.ChucVu})` : ''}
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    id="anonymous"
+                    checked={anonymous}
+                    onChange={e => setAnonymous(e.target.checked)}
+                    style={{ width: 18, height: 18 }}
+                  />
+                  <label htmlFor="anonymous" style={{ margin: 0, cursor: 'pointer', fontSize: '1rem' }}>
+                    Gửi ẩn danh
+                  </label>
                 </div>
 
                 <div className="form-group">
@@ -349,33 +438,73 @@ const FeedbackPage: React.FC = () => {
                     <p>Chưa có đánh giá nào</p>
                   </div>
                 ) : (
-                  recentFeedbacks.map(feedback => (
-                    <div key={feedback.MaDanhGia} className="feedback-item">
-                      <div className="feedback-top">
-                        <strong className="target-name">{feedback.TenCanSu}</strong>
-                        <div className="rating-info">
-                          <span 
-                            className="stars"
-                            style={{ color: getCriteriaColor(feedback.TieuChi) }}
-                          >
-                            {getStarRating(feedback.TieuChi)}
+                  recentFeedbacks.map(feedback => {
+                    const label = normalizeCriteriaLabel(feedback.TieuChi, feedback.MucLabel);
+                    // Hiển thị tên người gửi: nếu là ẩn danh thì "Ẩn danh", nếu là người đăng nhập thì "Tôi", còn lại lấy tên từ API
+                    let displaySender = "Ẩn danh";
+                    if (feedback.TenNguoiGui !== "Ẩn danh") {
+                      if (feedback.NguoiGui && feedback.NguoiGui === currentUserId) {
+                        displaySender = "Tôi";
+                      } else {
+                        displaySender = feedback.TenNguoiGui;
+                      }
+                    }
+                    return (
+                      <div key={feedback.MaDanhGia} className="feedback-item">
+                        <div className="feedback-top">
+                          <strong className="target-name">
+                            {feedback.TenCanSu}
+                            <span style={{ color: '#64748b', fontWeight: 400, marginLeft: 8, fontSize: '0.98em' }}>
+                              {feedback.CanSuDuocDanhGia ? `(ID: ${feedback.CanSuDuocDanhGia})` : ''}
+                            </span>
+                          </strong>
+                          <div className="rating-info">
+                            <span 
+                              className="stars"
+                              style={{ color: getCriteriaColor(feedback.TieuChi, feedback.MucLabel) }}
+                            >
+                              {getStarRating(feedback.TieuChi, feedback.MucLabel)}
+                            </span>
+                            <span className="criteria">
+                              {label}
+                            </span>
+                          </div>
+                          {/* Nút xóa chỉ hiện với feedback của chính mình */}
+                          {feedback.NguoiGui === currentUserId && (
+                            <button
+                              className="delete-feedback-btn"
+                              title="Xóa đánh giá"
+                              style={{
+                                marginLeft: 8,
+                                background: 'none',
+                                border: 'none',
+                                color: '#d32f2f',
+                                cursor: 'pointer',
+                                fontSize: '1.1em'
+                              }}
+                              onClick={() => handleDeleteFeedback(feedback.MaDanhGia)}
+                            >
+                              🗑
+                            </button>
+                          )}
+                        </div>
+                        {feedback.NoiDung && (
+                          <div className="feedback-content">
+                            "{feedback.NoiDung}"
+                          </div>
+                        )}
+                        <div className="feedback-bottom">
+                          <span className="author">
+                            Người gửi: <b>{displaySender}</b>
                           </span>
-                          <span className="criteria">{feedback.TieuChi}</span>
+                          <span className="time">{getTimeAgo(feedback.NgayGui)}</span>
+                          <span className="date" style={{ marginLeft: 8, color: '#64748b', fontSize: '0.95em' }}>
+                            {feedback.NgayGui ? new Date(feedback.NgayGui).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : ''}
+                          </span>
                         </div>
                       </div>
-                      
-                      {feedback.NoiDung && (
-                        <div className="feedback-content">
-                          "{feedback.NoiDung}"
-                        </div>
-                      )}
-                      
-                      <div className="feedback-bottom">
-                        <span className="author">{feedback.TenNguoiGui}</span>
-                        <span className="time">{getTimeAgo(feedback.NgayGui)}</span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 

@@ -120,27 +120,41 @@
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(30,58,138,0.08);
   margin-top: 24px;
+  background: #fff; /* Thêm dòng này để table-wrapper có nền trắng sát table */
 }
 
 .cansu-table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
+  background: transparent; /* Đổi từ #fff sang transparent để dùng nền của .table-wrapper */
   overflow: hidden;
   margin-top: 0;
   min-width: 700px;
 }
 
+/* Xóa khoảng trắng dưới bảng */
+.table-wrapper {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+/* Nếu vẫn còn dư khoảng trắng, kiểm tra phần tử cha hoặc thêm: */
+.table-wrapper, .cansu-table {
+  margin-bottom: 0 !important;
+}
+
 .cansu-table th, .cansu-table td {
   padding: 12px 10px;
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid #e0e7ef;
+  vertical-align: middle;
 }
 
 .cansu-table th {
   background: #2563eb;
   color: #fff;
   font-weight: 600;
+  text-align: center;
 }
 
 .cansu-table tr:last-child td {
@@ -156,7 +170,7 @@
 }
 
 .cansu-table td {
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 /* Thêm style cho icon hành động */
