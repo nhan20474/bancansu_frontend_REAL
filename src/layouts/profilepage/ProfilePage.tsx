@@ -335,7 +335,7 @@ const ProfilePage: React.FC = () => {
                         }
                       }}
                     />
-                    <div className="avatar-overlay">
+                    <div className="avatar-overlay" onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
                       <i className="fas fa-camera"></i>
                       <span>Thay đổi</span>
                     </div>
