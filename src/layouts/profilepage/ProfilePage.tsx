@@ -29,6 +29,10 @@ const ProfilePage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
   const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ Email: '', SoDienThoai: '' });
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hàm lấy URL ảnh đại diện chuẩn
@@ -40,9 +44,7 @@ const ProfilePage: React.FC = () => {
     if (profile.avatar && profile.avatar.startsWith('http')) {
       return profile.avatar;
     }
-    // Ưu tiên profile.HinhAnh nếu có
     if (profile.HinhAnh && profile.HinhAnh.trim() !== '') {
-      // Loại bỏ mọi tiền tố App/, App\, uploads/, uploads\, /uploads/, \uploads\
       const file = profile.HinhAnh.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
       return `http://localhost:8080/uploads/${file}`;
     }
@@ -68,9 +70,8 @@ const ProfilePage: React.FC = () => {
       .then(res => {
         const data = res.data;
         setProfile(data);
+        setEditForm({ Email: data.Email || '', SoDienThoai: data.SoDienThoai || '' });
         setLoading(false);
-        // Log để kiểm tra dữ liệu trả về
-        console.log('API trả về:', data);
       })
       .catch(err => {
         setError(err.response?.data?.message || 'Không thể tải hồ sơ cá nhân.');
@@ -117,13 +118,11 @@ const ProfilePage: React.FC = () => {
       let avatarValue = '';
       let hinhAnhValue = '';
       if (data.success && data.user) {
-        // Ưu tiên normalized nếu backend trả về
         if (data.user.normalized && typeof data.user.normalized === 'string' && data.user.normalized.trim() !== '') {
           avatarValue = data.user.normalized;
         } else if (data.user.avatar && data.user.avatar.startsWith('http')) {
           avatarValue = data.user.avatar;
         } else if (data.user.avatar && data.user.avatar.trim() !== '') {
-          // Loại bỏ mọi tiền tố App/, App\, uploads/, uploads\, /uploads/, \uploads\
           const file = data.user.avatar.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
           avatarValue = `http://localhost:8080/uploads/${file}`;
         } else if (data.user.HinhAnh && data.user.HinhAnh.trim() !== '') {
@@ -141,7 +140,6 @@ const ProfilePage: React.FC = () => {
         );
         localStorage.setItem('user', JSON.stringify({ ...data.user, avatar: avatarValue, HinhAnh: hinhAnhValue }));
       } else if (data.url) {
-        // Loại bỏ mọi tiền tố App/, App\, uploads/, uploads\, /uploads/, \uploads\
         const file = data.url.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
         avatarValue = data.url.startsWith('http') ? data.url : `http://localhost:8080/uploads/${file}`;
         setUser({ ...user!, avatar: avatarValue });
@@ -161,36 +159,150 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setEditForm({ 
+        Email: profile?.Email || '', 
+        SoDienThoai: profile?.SoDienThoai || '' 
+      });
+      setSaveMsg(null);
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateForm = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10,11}$/;
+
+    if (!editForm.Email.trim()) {
+      setSaveMsg('Email không được để trống');
+      return false;
+    }
+
+    if (!emailRegex.test(editForm.Email)) {
+      setSaveMsg('Email không hợp lệ');
+      return false;
+    }
+
+    if (!editForm.SoDienThoai.trim()) {
+      setSaveMsg('Số điện thoại không được để trống');
+      return false;
+    }
+
+    if (!phoneRegex.test(editForm.SoDienThoai)) {
+      setSaveMsg('Số điện thoại phải có 10-11 chữ số');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSaveProfile = async () => {
+    setSaveMsg(null);
+    
+    if (!validateForm()) return;
+
+    setSaving(true);
+    try {
+      const response = await axios.put('/user/profile', {
+        userId: user?.userId,
+        Email: editForm.Email.trim(),
+        SoDienThoai: editForm.SoDienThoai.trim()
+      });
+
+      if (response.data.success) {
+        setProfile(prev => prev ? { 
+          ...prev, 
+          Email: editForm.Email.trim(), 
+          SoDienThoai: editForm.SoDienThoai.trim() 
+        } : prev);
+        
+        if (user) {
+          setUser({
+            ...user,
+            email: editForm.Email.trim()
+          });
+        }
+        
+        setSaveMsg('Cập nhật thông tin thành công!');
+        setIsEditing(false);
+      } else {
+        setSaveMsg(response.data.message || 'Cập nhật thất bại');
+      }
+    } catch (err: any) {
+      setSaveMsg(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!user || !user.userId) {
     return (
       <div className="profile-page">
         <div className="profile-error">
-          Không tìm thấy thông tin người dùng hoặc thiếu userId. Vui lòng đăng nhập lại.
+          <div className="error-icon">
+            <i className="fas fa-exclamation-triangle"></i>
+          </div>
+          <h3>Không tìm thấy thông tin người dùng</h3>
+          <p>Vui lòng đăng nhập lại để tiếp tục</p>
+          <Link to="/login" className="profile-btn primary">
+            <i className="fas fa-sign-in-alt"></i>
+            Đăng nhập
+          </Link>
         </div>
       </div>
     );
   }
+
   if (loading) {
     return (
       <div className="profile-page">
         <div className="profile-loading">
-          <i className="fas fa-spinner fa-spin"></i> Đang tải hồ sơ cá nhân...
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+          </div>
+          <h3>Đang tải hồ sơ cá nhân...</h3>
+          <p>Vui lòng chờ trong giây lát</p>
         </div>
       </div>
     );
   }
+
   if (error) {
     return (
       <div className="profile-page">
-        <div className="profile-error">{error}</div>
+        <div className="profile-error">
+          <div className="error-icon">
+            <i className="fas fa-exclamation-circle"></i>
+          </div>
+          <h3>Có lỗi xảy ra</h3>
+          <p>{error}</p>
+          <button 
+            className="profile-btn secondary" 
+            onClick={() => window.location.reload()}
+          >
+            <i className="fas fa-refresh"></i>
+            Thử lại
+          </button>
+        </div>
       </div>
     );
   }
+
   if (!profile) {
     return (
       <div className="profile-page">
         <div className="profile-error">
-          Không thể tải hồ sơ. Vui lòng thử lại sau.
+          <div className="error-icon">
+            <i className="fas fa-user-slash"></i>
+          </div>
+          <h3>Không thể tải hồ sơ</h3>
+          <p>Vui lòng thử lại sau</p>
         </div>
       </div>
     );
@@ -198,76 +310,280 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="profile-page">
-      <div className="profile-content">
-        <div className="profile-card">
-          <div className="avatar-section">
-            <div
-              style={{
-                width: 120,
-                height: 120,
-                background: '#e0e7ef',
-                borderRadius: '50%',
-                border: '3px solid #1e3a8a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-                margin: '0 auto 12px auto',
-              }}
-            >
-              <img
-                src={getAvatarUrl(profile, user, avatarPreview)}
-                alt="Avatar"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '50%',
-                  background: '#e0e7ef',
-                }}
-                onClick={() => fileInputRef.current?.click()}
-                title="Đổi ảnh đại diện"
-                onError={e => {
-                  if ((e.target as HTMLImageElement).src.indexOf('/avatar-placeholder.png') === -1) {
-                    (e.target as HTMLImageElement).src = '/avatar-placeholder.png';
-                  }
-                }}
-              />
+      <div className="profile-container">
+        <div className="page-header">
+          <h2>Hồ sơ cá nhân</h2>
+          <p>Quản lý thông tin tài khoản và cài đặt cá nhân của bạn</p>
+        </div>
+
+        <div className="profile-layout">
+          {/* Avatar & Basic Info Card */}
+          <div className="profile-sidebar">
+            <div className="avatar-card">
+              <div className="avatar-section">
+                <div className="avatar-wrapper">
+                  <div className="avatar-container">
+                    <img
+                      src={getAvatarUrl(profile, user, avatarPreview)}
+                      alt="Avatar"
+                      className="avatar-img"
+                      onClick={() => fileInputRef.current?.click()}
+                      title="Nhấn để thay đổi ảnh đại diện"
+                      onError={e => {
+                        if ((e.target as HTMLImageElement).src.indexOf('/avatar-placeholder.png') === -1) {
+                          (e.target as HTMLImageElement).src = '/avatar-placeholder.png';
+                        }
+                      }}
+                    />
+                    <div className="avatar-overlay">
+                      <i className="fas fa-camera"></i>
+                      <span>Thay đổi</span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    className="avatar-upload-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    title="Thay đổi ảnh đại diện"
+                  >
+                    <i className="fas fa-camera"></i>
+                    Thay đổi ảnh
+                  </button>
+                  
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    ref={fileInputRef}
+                    onChange={handleAvatarChange}
+                    disabled={uploading}
+                  />
+                </div>
+
+                {uploading && (
+                  <div className="upload-status">
+                    <div className="upload-spinner">
+                      <div className="spinner small"></div>
+                    </div>
+                    <span>Đang tải lên...</span>
+                  </div>
+                )}
+                
+                {avatarMsg && (
+                  <div className={`avatar-message ${avatarMsg.includes('thành công') ? 'success' : 'error'}`}>
+                    <i className={`fas ${avatarMsg.includes('thành công') ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                    <span>{avatarMsg}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="basic-info">
+                <h2>{profile.HoTen}</h2>
+                <div className="role-badge">
+                  <i className="fas fa-user-tag"></i>
+                  {profile.VaiTro}
+                </div>
+                <div className="student-id">
+                  <i className="fas fa-id-card"></i>
+                  <span>MSSV: {profile.MaSoSV}</span>
+                </div>
+                <div className="status-badge active">
+                  <i className="fas fa-circle"></i>
+                  <span>Đang hoạt động</span>
+                </div>
+              </div>
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              ref={fileInputRef}
-              onChange={handleAvatarChange}
-              disabled={uploading}
-            />
-            <button
-              className="avatar-upload-btn"
-              onClick={() => fileInputRef.current?.click()}
-              type="button"
-              disabled={uploading}
-            >
-              <i className="fas fa-camera"></i>
-            </button>
-            {uploading && <span>Đang tải lên...</span>}
-            {avatarMsg && <div className="profile-error" style={{ marginTop: 8 }}>{avatarMsg}</div>}
+
+            {/* Quick Actions */}
+            <div className="quick-actions-card">
+              <h3>
+                <i className="fas fa-bolt"></i>
+                Thao tác nhanh
+              </h3>
+              <div className="actions-list">
+                <Link className="action-item" to="/change-password">
+                  <div className="action-icon">
+                    <i className="fas fa-key"></i>
+                  </div>
+                  <div className="action-content">
+                    <span className="action-title">Đổi mật khẩu</span>
+                    <span className="action-desc">Cập nhật mật khẩu bảo mật</span>
+                  </div>
+                  <i className="fas fa-chevron-right"></i>
+                </Link>
+                
+                <button className="action-item logout-action" onClick={logout}>
+                  <div className="action-icon">
+                    <i className="fas fa-sign-out-alt"></i>
+                  </div>
+                  <div className="action-content">
+                    <span className="action-title">Đăng xuất</span>
+                    <span className="action-desc">Thoát khỏi tài khoản</span>
+                  </div>
+                  <i className="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="info-section">
-            <h2>Hồ sơ cá nhân</h2>
-            <p><strong>Họ tên:</strong> {profile.HoTen}</p>
-            <p><strong>Email:</strong> {profile.Email}</p>
-            <p><strong>MSSV:</strong> {profile.MaSoSV}</p>
-            <p><strong>SĐT:</strong> {profile.SoDienThoai}</p>
-            <p><strong>Vai trò:</strong> {profile.VaiTro}</p>
-            <p><strong>Trạng thái:</strong> {profile.TrangThai === false ? 'Khóa' : 'Đang hoạt động'}</p>
-            <div className="profile-actions">
-              <Link className="profile-btn" to="/change-password">
-                <i className="fas fa-key"></i> Đổi mật khẩu
-              </Link>
-              <button className="profile-btn logout" onClick={logout}>
-                <i className="fas fa-sign-out-alt"></i> Đăng xuất
-              </button>
+
+          {/* Main Content */}
+          <div className="profile-main">
+            {/* Personal Information Card */}
+            <div className="info-card">
+              <div className="card-header">
+                <div className="header-left">
+                  <h2>
+                    <i className="fas fa-user"></i>
+                    Thông tin cá nhân
+                  </h2>
+                  <p>Quản lý thông tin liên hệ và các chi tiết cá nhân</p>
+                </div>
+                <button
+                  className={`edit-toggle-btn ${isEditing ? 'cancel' : 'edit'}`}
+                  onClick={handleEditToggle}
+                  disabled={saving}
+                >
+                  {isEditing ? (
+                    <>
+                      <i className="fas fa-times"></i>
+                      Hủy bỏ
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-edit"></i>
+                      Chỉnh sửa
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {saveMsg && (
+                <div className={`save-notification ${saveMsg.includes('thành công') ? 'success' : 'error'}`}>
+                  <div className="notification-icon">
+                    <i className={`fas ${saveMsg.includes('thành công') ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                  </div>
+                  <span>{saveMsg}</span>
+                </div>
+              )}
+
+              <div className="info-grid">
+                <div className="info-group">
+                  <h4>Thông tin cơ bản</h4>
+                  <div className="info-fields">
+                    <div className="info-field readonly">
+                      <label>
+                        <i className="fas fa-user"></i>
+                        Họ và tên
+                      </label>
+                      <div className="field-value">
+                        {profile.HoTen}
+                      </div>
+                    </div>
+
+                    <div className="info-field readonly">
+                      <label>
+                        <i className="fas fa-id-card"></i>
+                        Mã số sinh viên
+                      </label>
+                      <div className="field-value">
+                        {profile.MaSoSV}
+                      </div>
+                    </div>
+
+                    <div className="info-field readonly">
+                      <label>
+                        <i className="fas fa-user-tag"></i>
+                        Vai trò
+                      </label>
+                      <div className="field-value">
+                        <span className="role-tag">{profile.VaiTro}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="info-group">
+                  <h4>Thông tin liên hệ</h4>
+                  <div className="info-fields">
+                    <div className={`info-field ${isEditing ? 'editable' : ''}`}>
+                      <label>
+                        <i className="fas fa-envelope"></i>
+                        Địa chỉ email
+                      </label>
+                      {isEditing ? (
+                        <div className="field-input">
+                          <input
+                            type="email"
+                            name="Email"
+                            value={editForm.Email}
+                            onChange={handleFormChange}
+                            placeholder="Nhập địa chỉ email"
+                            required
+                          />
+                        </div>
+                      ) : (
+                        <div className="field-value">
+                          {profile.Email}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={`info-field ${isEditing ? 'editable' : ''}`}>
+                      <label>
+                        <i className="fas fa-phone"></i>
+                        Số điện thoại
+                      </label>
+                      {isEditing ? (
+                        <div className="field-input">
+                          <input
+                            type="tel"
+                            name="SoDienThoai"
+                            value={editForm.SoDienThoai}
+                            onChange={handleFormChange}
+                            placeholder="Nhập số điện thoại"
+                            required
+                          />
+                        </div>
+                      ) : (
+                        <div className="field-value">
+                          {profile.SoDienThoai}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {isEditing && (
+                <div className="edit-actions">
+                  <button
+                    className="profile-btn secondary"
+                    onClick={handleEditToggle}
+                    disabled={saving}
+                  >
+                    <i className="fas fa-times"></i>
+                    Hủy bỏ
+                  </button>
+                  <button
+                    className="profile-btn primary"
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <>
+                        <div className="spinner small"></div>
+                        Đang lưu...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-save"></i>
+                        Lưu thay đổi
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -150,10 +150,16 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
                 </div>
                 <ul>
                   <li className="disabled">Tài khoản</li>
-                  <li>Ngôn ngữ</li>
-                  <li>Cài đặt hiển thị</li>
-                  <li>Toàn màn hình <span className="shortcut">F11</span></li>
-                  <li>Khôi phục giao diện mặc định</li>
+                  <li>
+                    <Link to="/tasks" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      Nhiệm vụ
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/change-password" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      Đổi mật khẩu
+                    </Link>
+                  </li>
                   <hr />
                   <li className="logout" onClick={logout}>Đăng xuất</li>
                 </ul>
