@@ -268,6 +268,21 @@ const TaskList: React.FC = () => {
     }
   };
 
+  // Phân quyền: chỉ admin và giảng viên được thêm/sửa/xóa, còn lại chỉ xem
+  function getUserRole(user: any): string {
+    if (!user) return '';
+    return (
+      user.VaiTro ||
+      user.role ||
+      user.vaitro ||
+      user.Role ||
+      user.ROLE ||
+      ''
+    ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  }
+  const userRole = getUserRole(user);
+  const canEdit = userRole === 'admin' || userRole === 'giangvien';
+
   // Thông báo đang tải
   if (loading) return (
     <div className="task-list-page">
@@ -300,14 +315,15 @@ const TaskList: React.FC = () => {
     <div className="task-list-page" style={{ height: '100vh', overflowY: 'auto' }}>
       <div style={{ marginBottom: 16 }}>
         
-        
       </div>
       <h2>Danh sách nhiệm vụ</h2>
       {successMsg && <div className="form-success">{successMsg}</div>}
-      <button className="action-btn" onClick={() => openForm(null)}>
-        <i className="fas fa-plus"></i> Thêm nhiệm vụ mới
-      </button>
-      {showForm && (
+      {canEdit && (
+        <button className="action-btn" onClick={() => openForm(null)}>
+          <i className="fas fa-plus"></i> Thêm nhiệm vụ mới
+        </button>
+      )}
+      {showForm && canEdit && (
         <form className="task-form" onSubmit={handleFormSubmit}>
           <h3 className="task-form-title">
             {editId ? 'Cập nhật nhiệm vụ' : 'Thêm nhiệm vụ mới'}
@@ -457,22 +473,26 @@ const TaskList: React.FC = () => {
                     >
                       <i className="fas fa-eye"></i> Xem
                     </button>
-                    <button
-                      className="action-btn"
-                      title="Sửa"
-                      onClick={() => openForm(task)}
-                      style={{ marginLeft: 4 }}
-                    >
-                      <i className="fas fa-edit"></i>
-                    </button>
-                    <button
-                      className="action-btn delete"
-                      title="Xóa"
-                      onClick={() => handleDelete(task.MaNhiemVu)}
-                      style={{ marginLeft: 4 }}
-                    >
-                      <i className="fas fa-trash-alt"></i>
-                    </button>
+                    {canEdit && (
+                      <>
+                        <button
+                          className="action-btn"
+                          title="Sửa"
+                          onClick={() => openForm(task)}
+                          style={{ marginLeft: 4 }}
+                        >
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button
+                          className="action-btn delete"
+                          title="Xóa"
+                          onClick={() => handleDelete(task.MaNhiemVu)}
+                          style={{ marginLeft: 4 }}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))

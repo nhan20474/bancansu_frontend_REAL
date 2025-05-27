@@ -57,6 +57,37 @@ const ReportsPage: React.FC = () => {
     }
   };
 
+  // Lấy role từ localStorage (hoặc context nếu có)
+  function getUserRole() {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return (
+          user.VaiTro ||
+          user.role ||
+          user.vaitro ||
+          user.Role ||
+          user.ROLE ||
+          ''
+        ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+      }
+    } catch {}
+    return '';
+  }
+  const userRole = getUserRole();
+
+  // Chỉ cho phép admin hoặc giảng viên xem trang này
+  if (userRole !== 'admin' && userRole !== 'giangvien') {
+    return (
+      <div className="reports-container">
+        <div className="reports-form" style={{ maxWidth: 700, textAlign: 'center', color: '#d32f2f', padding: 32 }}>
+          Bạn không có quyền truy cập chức năng thống kê này.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="reports-container">
       <div className="reports-form" style={{ maxWidth: 700 }}>

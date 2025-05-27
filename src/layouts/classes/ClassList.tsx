@@ -3,7 +3,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import axios from '../../api/axiosConfig';
-// import api from '../../utils/apiUtils'; // Nếu muốn dùng utils thì mở dòng này
+import { useUser } from '../../contexts/UserContext';
 import './ClassList.css';
 
 /**
@@ -27,6 +27,18 @@ const emptyClass: Partial<ClassItem> = {
   GiaoVien: undefined
 };
 
+function getUserRole(user: any): string {
+  if (!user) return '';
+  return (
+    user.VaiTro ||
+    user.role ||
+    user.vaitro ||
+    user.Role ||
+    user.ROLE ||
+    ''
+  ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+}
+
 function ClassList() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +51,10 @@ function ClassList() {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const { user } = useUser();
+  const userRole = getUserRole(user);
+  // Chỉ admin và giảng viên được phép sửa/xóa/thêm
+  const canEdit = userRole === 'admin' || userRole === 'giaovien';
 
   // Lấy danh sách lớp học (fix: luôn trả về mảng, không bị lỗi khi backend trả về object hoặc null)
   const fetchData = async () => {
@@ -65,7 +81,7 @@ function ClassList() {
   useEffect(() => {
     axios.get('/auth/users')
       .then(res => {
-        // Lọc ra giáo viên (role === 'giangvien')
+        // Lọc ra giảng viên (role === 'giangvien')
         setTeachers(
           res.data
             .filter((gv: any) => gv.VaiTro === 'giangvien')
@@ -92,6 +108,7 @@ function ClassList() {
   };
 
   const handleEdit = (item: ClassItem) => {
+    if (!canEdit) return;
     setEditing(item);
     setForm({
       MaLopHoc: item.MaLopHoc,
@@ -104,9 +121,10 @@ function ClassList() {
   };
 
   const handleAddNew = () => {
+    if (!canEdit) return;
     setEditing(null);
     setForm(emptyClass);
-    setError(null); // Đảm bảo xóa thông báo lỗi cũ khi mở form thêm mới
+    setError(null);
     setShowForm(true);
   };
 
@@ -120,6 +138,10 @@ function ClassList() {
   // Khi thêm mới lớp học, sau khi thêm thành công thì fetch lại danh sách lớp học
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEdit) {
+      setError('Bạn không có quyền thực hiện thao tác này.');
+      return;
+    }
     if (!form.MaLopHoc || !form.TenLop || !form.ChuyenNganh || !form.KhoaHoc || !form.GiaoVien) {
       setError('Vui lòng nhập đầy đủ thông tin bắt buộc.');
       return;
@@ -152,6 +174,10 @@ function ClassList() {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canEdit) {
+      setError('Bạn không có quyền xóa lớp.');
+      return;
+    }
     if (!id) {
       setError('Không xác định được lớp để xóa.');
       return;
@@ -199,7 +225,7 @@ function ClassList() {
     <div className="class-list-page">
       <h2>Danh sách lớp học</h2>
       {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
-      {showForm && (
+      {showForm && canEdit && (
         <form className="class-form" onSubmit={handleSubmit}>
           <h3 className="class-form-title">
             {editing ? 'Cập nhật lớp học' : 'Thêm lớp học mới'}
@@ -275,65 +301,124 @@ function ClassList() {
           </div>
         </form>
       )}
-      <button className="action-btn" title="Thêm mới" onClick={handleAddNew}>
-        <i className="fas fa-plus"></i>
-      </button>
-      <table className="class-table">
-        <thead>
-          <tr>
-            <th>Mã lớp học</th>
-            <th>Tên lớp</th>
-            <th>Chuyên ngành</th>
-            <th>Khóa học</th>
-            <th>Giáo viên chủ nhiệm</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {classes.length === 0 && (
+      {canEdit && (
+        <button
+          className="action-btn"
+          title="Thêm mới"
+          onClick={handleAddNew}
+          style={{
+            marginBottom: 18,
+            background: "#2563eb",
+            color: "#fff",
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: "1rem",
+            padding: "8px 18px",
+            boxShadow: "0 2px 8px #2563eb22",
+            border: "none"
+          }}
+        >
+          <i className="fas fa-plus"></i> Thêm lớp mới
+        </button>
+      )}
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 14,
+          boxShadow: "0 4px 24px #2563eb18",
+          overflow: "hidden",
+          marginTop: 18,
+          marginBottom: 32,
+          border: "1.5px solid #e0e7ef"
+        }}
+      >
+        <table className="class-table" style={{ margin: 0 }}>
+          <thead>
             <tr>
-              <td colSpan={6} style={{textAlign:'center', color:'#888'}}>Không có dữ liệu lớp học</td>
+              <th style={{ width: 110 }}>Mã lớp học</th>
+              <th style={{ width: 180 }}>Tên lớp</th>
+              <th style={{ width: 160 }}>Chuyên ngành</th>
+              <th style={{ width: 110 }}>Khóa học</th>
+              <th style={{ width: 180 }}>Giáo viên chủ nhiệm</th>
+              <th style={{ width: 160, textAlign: "center" }}>Hành động</th>
             </tr>
-          )}
-          {classes.map(item => (
-            <tr key={item.MaLop}>
-              <td>{item.MaLopHoc}</td>
-              <td>{item.TenLop}</td>
-              <td>{item.ChuyenNganh}</td>
-              <td>{item.KhoaHoc}</td>
-              <td>
-                {('TenGiaoVien' in item && item.TenGiaoVien)
-                  ? item.TenGiaoVien
-                  : teachers.find(gv => String(gv.id) === String(item.GiaoVien))?.name || '-'}
-              </td>
-              <td>
-                <button
-                  className="action-btn"
-                  title="Sửa"
-                  onClick={() => handleEdit(item)}
-                >
-                  <i className="fas fa-edit"></i>
-                </button>
-                <button
-                  className="action-btn delete"
-                  title="Xóa"
-                  onClick={() => handleDelete(item.MaLop)}
-                >
-                  <i className="fas fa-trash-alt"></i>
-                </button>
-                <button
-                  className="action-btn"
-                  title="Xem thành viên"
-                  style={{ marginLeft: 4 }}
-                  onClick={() => handleViewMembers(item)}
-                >
-                  <i className="fas fa-users"></i>
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {classes.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{textAlign:'center', color:'#888'}}>Không có dữ liệu lớp học</td>
+              </tr>
+            )}
+            {classes.map((item, idx) => (
+              <tr
+                key={item.MaLop}
+                style={{
+                  background: idx % 2 === 0 ? "#f9fafe" : "#fff",
+                  transition: "background 0.18s"
+                }}
+              >
+                <td style={{ fontWeight: 600, color: "#2563eb" }}>{item.MaLopHoc}</td>
+                <td style={{ fontWeight: 500 }}>{item.TenLop}</td>
+                <td>{item.ChuyenNganh}</td>
+                <td>{item.KhoaHoc}</td>
+                <td>
+                  {('TenGiaoVien' in item && item.TenGiaoVien)
+                    ? item.TenGiaoVien
+                    : teachers.find(gv => String(gv.id) === String(item.GiaoVien))?.name || '-'}
+                </td>
+                <td style={{ textAlign: "center" }}>
+                  {canEdit && (
+                    <>
+                      <button
+                        className="action-btn"
+                        title="Sửa"
+                        onClick={() => handleEdit(item)}
+                        style={{
+                          marginRight: 6,
+                          background: "#e0e7ef",
+                          color: "#2563eb",
+                          borderRadius: 6,
+                          border: "none"
+                        }}
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        className="action-btn delete"
+                        title="Xóa"
+                        onClick={() => handleDelete(item.MaLop)}
+                        style={{
+                          marginRight: 6,
+                          background: "#fdeaea",
+                          color: "#d32f2f",
+                          borderRadius: 6,
+                          border: "none"
+                        }}
+                      >
+                        <i className="fas fa-trash-alt"></i>
+                      </button>
+                    </>
+                  )}
+                  <button
+                    className="action-btn"
+                    title="Xem thành viên"
+                    style={{
+                      marginLeft: 2,
+                      background: "#f1f5f9",
+                      color: "#2563eb",
+                      borderRadius: 6,
+                      border: "none"
+                    }}
+                    onClick={() => handleViewMembers(item)}
+                  >
+                    <i className="fas fa-users"></i>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {/* Modal xem thành viên lớp */}
       {showMembersModal && (
         <div
@@ -346,49 +431,80 @@ function ClassList() {
         >
           <div
             style={{
-              background: '#fff', borderRadius: 10, boxShadow: '0 4px 24px #8884',
-              padding: 24, minWidth: 320, maxWidth: 500, position: 'relative'
+              background: '#fff',
+              borderRadius: 18,
+              boxShadow: '0 12px 48px #8885',
+              padding: 40,
+              minWidth: 520,
+              maxWidth: 900,
+              width: '90vw',
+              position: 'relative',
+              border: '2px solid #e0e7ef'
             }}
             onClick={e => e.stopPropagation()}
           >
             <button
               className="action-btn delete"
-              style={{ position: 'absolute', top: 10, right: 10 }}
+              style={{
+                position: 'absolute', top: 18, right: 18,
+                fontSize: 22, background: '#fdeaea', color: '#d32f2f'
+              }}
               onClick={() => setShowMembersModal(false)}
               title="Đóng"
             >
               <i className="fas fa-times"></i>
             </button>
-            <h3 style={{ marginBottom: 12 }}>
+            <h3 style={{
+              marginBottom: 22,
+              color: '#2563eb',
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              textAlign: 'center'
+            }}>
               Thành viên lớp: {selectedClass?.TenLop}
             </h3>
             {loadingMembers ? (
-              <div style={{ color: '#888', textAlign: 'center' }}>Đang tải thành viên...</div>
+              <div style={{ color: '#888', textAlign: 'center', padding: 32, fontSize: 18 }}>Đang tải thành viên...</div>
             ) : (!members || members.length === 0) ? (
-              <div style={{ color: '#888', textAlign: 'center' }}>Không có thành viên.</div>
+              <div style={{ color: '#888', textAlign: 'center', padding: 32, fontSize: 18 }}>Không có thành viên.</div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: 4 }}>Mã SV</th>
-                    <th style={{ textAlign: 'left', padding: 4 }}>Họ tên</th>
-                    <th style={{ textAlign: 'left', padding: 4 }}>Vai trò</th>
-                    <th style={{ textAlign: 'left', padding: 4 }}>Email</th>
-                    <th style={{ textAlign: 'left', padding: 4 }}>SĐT</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map((m: any) => (
-                    <tr key={m.MaNguoiDung}>
-                      <td style={{ padding: 4 }}>{m.MaSoSV || m.MaNguoiDung}</td>
-                      <td style={{ padding: 4 }}>{m.HoTen || ''}</td>
-                      <td style={{ padding: 4 }}>{m.VaiTro || ''}</td>
-                      <td style={{ padding: 4 }}>{m.Email || ''}</td>
-                      <td style={{ padding: 4 }}>{m.SoDienThoai || ''}</td>
+              <div style={{
+                maxHeight: 480,
+                overflowY: 'auto',
+                borderRadius: 10,
+                border: '1.5px solid #e0e7ef',
+                background: '#f9fafe',
+                boxShadow: '0 2px 12px #e0e7ef55',
+                marginBottom: 0
+              }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  background: 'transparent',
+                  fontSize: 17
+                }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: 10 }}>Mã SV</th>
+                      <th style={{ textAlign: 'left', padding: 10 }}>Họ tên</th>
+                      <th style={{ textAlign: 'left', padding: 10 }}>Vai trò</th>
+                      <th style={{ textAlign: 'left', padding: 10 }}>Email</th>
+                      <th style={{ textAlign: 'left', padding: 10 }}>SĐT</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {members.map((m: any) => (
+                      <tr key={m.MaNguoiDung}>
+                        <td style={{ padding: 10 }}>{m.MaSoSV || m.MaNguoiDung}</td>
+                        <td style={{ padding: 10 }}>{m.HoTen || ''}</td>
+                        <td style={{ padding: 10 }}>{m.VaiTro || ''}</td>
+                        <td style={{ padding: 10 }}>{m.Email || ''}</td>
+                        <td style={{ padding: 10 }}>{m.SoDienThoai || ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

@@ -58,6 +58,21 @@ const NotificationList: React.FC = () => {
   const [classes, setClasses] = useState<{ MaLop: number, TenLop: string }[]>([]);
   const { user } = useUser();
 
+  // Phân quyền: chỉ admin và giáo viên được thêm/sửa/xóa, còn lại chỉ xem
+  function getUserRole(user: any): string {
+    if (!user) return '';
+    return (
+      user.VaiTro ||
+      user.role ||
+      user.vaitro ||
+      user.Role ||
+      user.ROLE ||
+      ''
+    ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  }
+  const userRole = getUserRole(user);
+  const canEdit = userRole === 'admin' || userRole === 'giaovien';
+
   const fetchData = () => {
     setLoading(true);
     axios.get('/thongbao')
@@ -128,12 +143,13 @@ const NotificationList: React.FC = () => {
   };
 
   const handleEdit = (item: Notification) => {
+    if (!canEdit) return;
     setEditing(item);
     setForm({
       TieuDe: item.TieuDe,
       NoiDung: item.NoiDung,
       MaLop: item.MaLop,
-      link: item.link || '', // đảm bảo trường link được set vào form khi sửa
+      link: item.link || '', // giữ lại link khi sửa
       ThoiGianGui: item.ThoiGianGui ? item.ThoiGianGui.slice(0, 10) : '',
       AnhDinhKem: item.AnhDinhKem || null
     });
@@ -152,6 +168,11 @@ const NotificationList: React.FC = () => {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!canEdit) {
+      setError('Bạn không có quyền thực hiện thao tác này.');
+      return;
+    }
 
     // Kiểm tra tất cả trường bắt buộc
     if (
@@ -176,8 +197,8 @@ const NotificationList: React.FC = () => {
         formData.append('AnhDinhKem', form.AnhDinhKem);
       }
     }
-    if (form.link) {
-      formData.append('link', form.link);
+    if (form.link !== undefined) {
+      formData.set('link', form.link); // luôn lưu lại link khi sửa/thêm
     }
 
     try {
@@ -204,6 +225,10 @@ const NotificationList: React.FC = () => {
   };
 
   const handleDelete = (id: number) => {
+    if (!canEdit) {
+      setError('Bạn không có quyền xóa thông báo.');
+      return;
+    }
     if (window.confirm('Bạn có chắc chắn muốn xóa thông báo này không?')) {
       axios.delete(`/thongbao/${id}`)
         .then(() => fetchData())
@@ -237,11 +262,13 @@ const NotificationList: React.FC = () => {
         <p>
           Cập nhật các thông báo mới nhất từ hệ thống, lớp học, cán sự. Nhấn vào từng thông báo để xem chi tiết hoặc mở liên kết liên quan.
         </p>
-        <button className="feed-add-btn" title="Thêm thông báo mới" onClick={() => { setShowForm(true); setEditing(null); setForm({ ...emptyNotification }); setImagePreview(undefined); }}>
-          <i className="fas fa-plus"></i> Đăng thông báo mới
-        </button>
+        {canEdit && (
+          <button className="feed-add-btn" title="Thêm thông báo mới" onClick={() => { setShowForm(true); setEditing(null); setForm({ ...emptyNotification }); setImagePreview(undefined); }}>
+            <i className="fas fa-plus"></i> Đăng thông báo mới
+          </button>
+        )}
       </div>
-      {showForm && (
+      {showForm && canEdit && (
         <form className="notification-form" onSubmit={handleFormSubmit} encType="multipart/form-data" style={{margin:'0 auto 24px auto', maxWidth:420}}>
           <h3 style={{textAlign:'center', color:'#2563eb', marginBottom:10}}>{editing ? 'Cập nhật thông báo' : 'Đăng thông báo mới'}</h3>
           <input
@@ -335,20 +362,24 @@ const NotificationList: React.FC = () => {
                 <span className="feed-time">{item.ThoiGianGui ? new Date(item.ThoiGianGui).toLocaleString('vi-VN') : ''}</span>
               </div>
               <div className="feed-actions">
-                <button
-                  className="action-btn"
-                  title="Chỉnh sửa"
-                  onClick={() => handleEdit(item)}
-                >
-                  <i className="fas fa-edit"></i>
-                </button>
-                <button
-                  className="action-btn delete"
-                  title="Xóa"
-                  onClick={() => handleDelete(item.MaThongBao)}
-                >
-                  <i className="fas fa-trash-alt"></i>
-                </button>
+                {canEdit && (
+                  <>
+                    <button
+                      className="action-btn"
+                      title="Chỉnh sửa"
+                      onClick={() => handleEdit(item)}
+                    >
+                      <i className="fas fa-edit"></i>
+                    </button>
+                    <button
+                      className="action-btn delete"
+                      title="Xóa"
+                      onClick={() => handleDelete(item.MaThongBao)}
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
             <div className="feed-card-body">
