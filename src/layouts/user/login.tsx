@@ -13,40 +13,73 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Hàm lấy role từ response backend
+  function getUserRole(data: any): string {
+    return (
+      data.VaiTro ||
+      data.role ||
+      data.vaitro ||
+      data.Role ||
+      data.ROLE ||
+      ''
+    ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    
+
     try {
       const res = await axios.post('/auth/login', {
         username: username.trim(),
         password: password
       });
-      
+
       const data = res.data;
+      const token = data.token;
       const userId = data.userId || data.MaNguoiDung;
       const name = data.name || data.HoTen || data.username || '';
       const email = data.email || data.Email || '';
-      
-      if (!userId) {
+      const role = getUserRole(data);
+
+      // Kiểm tra backend trả về lỗi đăng nhập sai
+      if (res.status === 401 || res.status === 403) {
         setError('Sai tên đăng nhập hoặc mật khẩu.');
+        setLoading(false);
         return;
       }
-      
+
+      // Nếu không nhận được token từ backend (token == null/undefined/''), đây là lỗi backend.
+      if (!token) {
+        setError('Đăng nhập thất bại: Không nhận được token từ máy chủ. (Lỗi backend, vui lòng kiểm tra API trả về)');
+        setLoading(false);
+        return;
+      }
+      // Nếu không có role hoặc role rỗng, báo lỗi thiếu quyền
+      if (!role) {
+        setError('Đăng nhập thất bại: Thiếu thông tin quyền (role). Vui lòng liên hệ quản trị viên hoặc kiểm tra lại API.');
+        setLoading(false);
+        return;
+      }
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+
       const user = {
         userId,
         name,
         email,
+        role,
         avatar: data.avatar || data.HinhAnh || '/avatar-placeholder.png'
       };
-      
+
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       history.push('/');
-      
     } catch (err: any) {
-      if (err.response?.status === 401) {
+      // Nếu backend trả về lỗi 401 hoặc 403 thì báo sai tài khoản/mật khẩu
+      if (err.response?.status === 401 || err.response?.status === 403) {
         setError('Sai tên đăng nhập hoặc mật khẩu. Vui lòng kiểm tra lại thông tin đăng nhập.');
       } else if (err.response?.status === 400) {
         setError('Vui lòng nhập đầy đủ thông tin.');

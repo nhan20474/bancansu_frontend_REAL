@@ -52,6 +52,9 @@ const FeedbackPage: React.FC = () => {
   const [feedbackStats, setFeedbackStats] = useState({ total: 0, avgRating: 0 });
   const [anonymous, setAnonymous] = useState(false);
 
+  // Thêm state để hiển thị form sửa riêng biệt
+  const [editingFeedback, setEditingFeedback] = useState<FeedbackItem | null>(null);
+
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -196,6 +199,7 @@ const FeedbackPage: React.FC = () => {
     return CRITERIA_OPTIONS.find(opt => opt.value === criteria) || CRITERIA_OPTIONS[2];
   };
 
+  // Khi gửi feedback ẩn danh, lưu id vào localStorage để nhận diện quyền sửa/xóa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMsg(null);
@@ -203,20 +207,16 @@ const FeedbackPage: React.FC = () => {
     setLoading(true);
 
     try {
-      // Nếu gửi ẩn danh thì bắt buộc phải chọn cán sự, mức độ và nhập nhận xét
-      if (anonymous) {
-        if (!selectedOfficer || !criteria || !comment.trim()) {
-          setError('Thiếu thông tin đánh giá.');
-          setLoading(false);
-          return;
-        }
-      } else {
-        // Không ẩn danh thì chỉ cần chọn cán sự và mức độ
-        if (!selectedOfficer || !criteria) {
-          setError('Thiếu thông tin đánh giá.');
-          setLoading(false);
-          return;
-        }
+      // Kiểm tra dữ liệu đầu vào
+      if (!selectedOfficer || !criteria) {
+        setError('Thiếu thông tin đánh giá.');
+        setLoading(false);
+        return;
+      }
+      if (anonymous && !comment.trim()) {
+        setError('Vui lòng nhập nhận xét khi gửi ẩn danh.');
+        setLoading(false);
+        return;
       }
 
       const currentCriteria = getCurrentCriteria();
@@ -226,7 +226,6 @@ const FeedbackPage: React.FC = () => {
         return;
       }
 
-      // Lấy đúng ID người dùng hiện tại khi gửi đánh giá
       const payload = {
         NguoiGui: anonymous ? null : currentUserId,
         CanSuDuocDanhGia: Number(selectedOfficer),
@@ -235,35 +234,154 @@ const FeedbackPage: React.FC = () => {
         AnDanh: anonymous ? true : false
       };
 
-      // Đổi endpoint sang /api/danhgia cho đồng bộ với backend
+      // Thêm mới đánh giá
       const response = await axios.post(`${API_BASE}/api/danhgia`, payload);
 
-      if (response.data && response.data.success) {
+      if (response.data && (response.data.success || response.data.MaDanhGia)) {
         setMsg('Đánh giá đã được gửi thành công!');
         setSelectedOfficer('');
         setCriteria(3);
         setComment('');
         setAnonymous(false);
+        // Nếu gửi ẩn danh, lưu id vào localStorage (kiểu số, không trùng lặp)
+        if (anonymous && response.data.MaDanhGia) {
+          let myAnonIds: number[] = [];
+          try {
+            myAnonIds = JSON.parse(localStorage.getItem('my_anonymous_feedbacks') || '[]');
+          } catch { myAnonIds = []; }
+          myAnonIds = myAnonIds.map(Number);
+          // Đảm bảo không trùng lặp và chỉ lưu tối đa 100 id gần nhất
+          if (!myAnonIds.includes(Number(response.data.MaDanhGia))) {
+            myAnonIds.push(Number(response.data.MaDanhGia));
+            if (myAnonIds.length > 100) myAnonIds = myAnonIds.slice(-100);
+            localStorage.setItem('my_anonymous_feedbacks', JSON.stringify(myAnonIds));
+          }
+        }
         await loadRecentFeedbacks();
       } else {
         setError('Có lỗi xảy ra khi gửi đánh giá.');
       }
-
     } catch (err: any) {
-      // Hiển thị lỗi chi tiết từ backend nếu có
       setError(err?.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Sửa đánh giá (hiện form sửa riêng)
+  const handleEditFeedback = (feedback: FeedbackItem) => {
+    setEditingFeedback(feedback);
+    setSelectedOfficer(String(feedback.CanSuDuocDanhGia));
+    setCriteria(getStarsFromCriteria(feedback.TieuChi, feedback.MucLabel));
+    setComment(feedback.NoiDung || '');
+    setAnonymous(feedback.AnDanh === true);
+    setMsg(null);
+    setError(null);
+  };
+
+  // Lưu cập nhật đánh giá
+  const handleUpdateFeedback = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editingFeedback) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const currentCriteria = getCurrentCriteria();
+
+      // Xác định giá trị NguoiGui và AnDanh gửi lên backend
+      let nguoiGuiValue: number | null = null;
+      let anDanhValue: boolean = false;
+
+      if (editingFeedback.AnDanh) {
+        // Nếu feedback gốc là ẩn danh
+        if (!anonymous) {
+          // Chuyển từ ẩn danh sang không ẩn danh: phải truyền NguoiGui hợp lệ
+          if (!currentUserId || currentUserId === 0 || currentUserId === null || currentUserId === undefined) {
+            setError('Không xác định được người gửi khi chuyển từ ẩn danh sang không ẩn danh. Vui lòng đăng nhập lại.');
+            setLoading(false);
+            return;
+          }
+          nguoiGuiValue = currentUserId;
+          anDanhValue = false;
+        } else {
+          // Vẫn giữ ẩn danh
+          nguoiGuiValue = null;
+          anDanhValue = true;
+        }
+      } else {
+        // Feedback gốc không ẩn danh
+        if (anonymous) {
+          nguoiGuiValue = null;
+          anDanhValue = true;
+        } else {
+          nguoiGuiValue = currentUserId;
+          anDanhValue = false;
+        }
+      }
+
+      const payload = {
+        TieuChi: currentCriteria.text,
+        NoiDung: comment || `Đánh giá: ${currentCriteria.text}`,
+        AnDanh: anDanhValue,
+        NguoiGui: nguoiGuiValue
+      };
+      await axios.put(`${API_BASE}/api/danhgia/${editingFeedback.MaDanhGia}`, payload);
+      setMsg('Cập nhật đánh giá thành công!');
+      setEditingFeedback(null);
+      setSelectedOfficer('');
+      setCriteria(3);
+      setComment('');
+      setAnonymous(false);
+      await loadRecentFeedbacks();
+    } catch (err: any) {
+      // Hiển thị lỗi rõ ràng từ backend nếu có
+      setError(err?.response?.data?.message || 'Không thể cập nhật đánh giá. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Xóa đánh giá (ẩn danh: chỉ admin hoặc người đã gửi feedback ẩn danh đó mới được xóa)
   const handleDeleteFeedback = async (feedbackId: number) => {
+    const feedback = recentFeedbacks.find(fb => fb.MaDanhGia === feedbackId);
+    const userRole = getUserRole();
+
+    if (feedback?.AnDanh) {
+      if (userRole === 'admin' || userRole === 'giangvien') {
+        // admin hoặc giảng viên được xóa mọi feedback ẩn danh
+      } else {
+        let myAnonIds: number[] = [];
+        try {
+          myAnonIds = JSON.parse(localStorage.getItem('my_anonymous_feedbacks') || '[]');
+        } catch { myAnonIds = []; }
+        myAnonIds = myAnonIds.map(Number);
+        if (!myAnonIds.includes(Number(feedbackId))) {
+          setError('Bạn chỉ có thể xóa đánh giá ẩn danh do chính bạn gửi.');
+          return;
+        }
+      }
+    } else {
+      if (String(feedback?.NguoiGui) !== String(currentUserId)) {
+        setError('Bạn chỉ có thể xóa đánh giá của chính mình.');
+        return;
+      }
+    }
     if (!window.confirm('Bạn có chắc muốn xóa đánh giá này?')) return;
     try {
       await axios.delete(`${API_BASE}/api/danhgia/${feedbackId}`);
+      // Nếu là ẩn danh và user xóa chính feedback của mình, xóa id khỏi localStorage
+      if (feedback?.AnDanh && userRole !== 'admin' && userRole !== 'giangvien') {
+        let myAnonIds: number[] = [];
+        try {
+          myAnonIds = JSON.parse(localStorage.getItem('my_anonymous_feedbacks') || '[]');
+        } catch { myAnonIds = []; }
+        myAnonIds = myAnonIds.map(Number).filter((id: number) => id !== Number(feedbackId));
+        localStorage.setItem('my_anonymous_feedbacks', JSON.stringify(myAnonIds));
+      }
       await loadRecentFeedbacks();
+      setMsg('Đã xóa đánh giá.');
     } catch (err) {
-      alert('Không thể xóa đánh giá. Vui lòng thử lại.');
+      setError('Không thể xóa đánh giá. Vui lòng thử lại.');
     }
   };
 
@@ -293,21 +411,61 @@ const FeedbackPage: React.FC = () => {
 
   const currentCriteria = getCurrentCriteria();
 
-  // Giả lập id và tên người dùng hiện tại (cần thay bằng dữ liệu thực tế khi có auth)
-  const getCurrentUserId = () => {
-    // Ví dụ: lưu user vào localStorage dạng { MaNguoiDung: 123, ... }
+  // Lấy user hiện tại từ localStorage (hoặc context nếu có)
+  function getCurrentUserId() {
     try {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        return user.MaNguoiDung || user.userId || 1; // fallback 1 nếu không có
+        // Đảm bảo đúng trường id
+        return user.MaNguoiDung || user.userId || user.id || 1;
       }
     } catch {}
     return 1;
-  };
-
+  }
   const currentUserId = getCurrentUserId();
-  const currentUserName = "Tôi";
+
+  // Lấy role để phân quyền sửa/xóa
+  function getUserRole() {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return (
+          user.VaiTro ||
+          user.role ||
+          user.vaitro ||
+          user.Role ||
+          user.ROLE ||
+          ''
+        ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+      }
+    } catch {}
+    return '';
+  }
+  const userRole = getUserRole();
+
+  // Phân quyền: chỉ người gửi feedback (chính chủ) mới được sửa/xóa feedback của mình
+  // Riêng feedback ẩn danh: admin hoặc người đã gửi feedback ẩn danh đó (dựa vào localStorage)
+  const canEditFeedback = (feedback: FeedbackItem) => {
+    const userRole = getUserRole();
+    if (feedback.AnDanh) {
+      if (userRole === 'admin' || userRole === 'giangvien') return true;
+      // Thử kiểm tra cả sessionStorage nếu localStorage bị xóa
+      let myAnonIds: number[] = [];
+      try {
+        myAnonIds = JSON.parse(localStorage.getItem('my_anonymous_feedbacks') || '[]');
+      } catch { myAnonIds = []; }
+      if (!Array.isArray(myAnonIds) || myAnonIds.length === 0) {
+        try {
+          myAnonIds = JSON.parse(sessionStorage.getItem('my_anonymous_feedbacks') || '[]');
+        } catch { myAnonIds = []; }
+      }
+      myAnonIds = myAnonIds.map(Number);
+      return myAnonIds.includes(Number(feedback.MaDanhGia));
+    }
+    return String(feedback.NguoiGui) === String(currentUserId);
+  };
 
   return (
     <div className="feedback-page">
@@ -322,12 +480,12 @@ const FeedbackPage: React.FC = () => {
           {/* Form Section */}
           <div className="form-section">
             <div className="form-card">
-              <h2>Gửi đánh giá</h2>
-              
+              <h2>{editingFeedback ? "Sửa đánh giá" : "Gửi đánh giá"}</h2>
               {msg && <div className="message success">{msg}</div>}
               {error && <div className="message error">{error}</div>}
 
-              <form onSubmit={handleSubmit}>
+              {/* Form thêm mới hoặc sửa */}
+              <form onSubmit={editingFeedback ? handleUpdateFeedback : handleSubmit}>
                 <div className="form-group">
                   <label>Chọn cán sự</label>
                   <select
@@ -359,10 +517,14 @@ const FeedbackPage: React.FC = () => {
                     Gửi ẩn danh
                   </label>
                 </div>
+                {anonymous && (
+                  <div style={{ color: '#d97706', background: '#fffbe7', border: '1px solid #fde68a', borderRadius: 6, padding: '8px 12px', marginBottom: 12, fontSize: '0.98rem' }}>
+                    <b>Lưu ý:</b> Khi đăng ẩn danh, <b>chỉ có admin và giảng viên</b> được quyền sửa hoặc xóa đánh giá này.
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label>Mức độ đánh giá</label>
-                  
                   <div className="rating-container">
                     <input
                       type="range"
@@ -373,7 +535,6 @@ const FeedbackPage: React.FC = () => {
                       className="rating-slider"
                       disabled={officers.length === 0}
                     />
-                    
                     <div className="rating-labels">
                       {CRITERIA_OPTIONS.map(opt => (
                         <span 
@@ -385,14 +546,13 @@ const FeedbackPage: React.FC = () => {
                         </span>
                       ))}
                     </div>
-
                     <div className="rating-display">
-                      <div className="rating-value" style={{ color: currentCriteria.color }}>
+                      <div className="rating-value" style={{ color: getCurrentCriteria().color }}>
                         <span className="score">{criteria}</span>
                         <span className="stars">{'★'.repeat(criteria)}{'☆'.repeat(5 - criteria)}</span>
                       </div>
                       <div className="rating-text">
-                        <strong>{currentCriteria.text}</strong>
+                        <strong>{getCurrentCriteria().text}</strong>
                       </div>
                     </div>
                   </div>
@@ -401,7 +561,7 @@ const FeedbackPage: React.FC = () => {
                 <div className="form-group">
                   <label>Nhận xét <span className="optional">(tùy chọn)</span></label>
                   <textarea
-                    placeholder={`Nhận xét về mức độ "${currentCriteria.text}" của cán sự...`}
+                    placeholder={`Nhận xét về mức độ "${getCurrentCriteria().text}" của cán sự...`}
                     value={comment}
                     onChange={e => setComment(e.target.value)}
                     rows={3}
@@ -409,14 +569,38 @@ const FeedbackPage: React.FC = () => {
                   />
                 </div>
 
-                <button 
-                  type="submit"
-                  className="submit-btn"
-                  disabled={loading || officers.length === 0}
-                  style={{ backgroundColor: loading ? '#9ca3af' : currentCriteria.color }}
-                >
-                  {loading ? 'Đang gửi...' : `Gửi đánh giá "${currentCriteria.text}"`}
-                </button>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    type="submit"
+                    className="submit-btn"
+                    disabled={loading || officers.length === 0}
+                    style={{ backgroundColor: loading ? '#9ca3af' : getCurrentCriteria().color }}
+                  >
+                    {loading
+                      ? 'Đang lưu...'
+                      : editingFeedback
+                        ? 'Lưu cập nhật'
+                        : `Gửi đánh giá "${getCurrentCriteria().text}"`}
+                  </button>
+                  {editingFeedback && (
+                    <button
+                      type="button"
+                      className="submit-btn"
+                      style={{ background: '#d32f2f' }}
+                      onClick={() => {
+                        setEditingFeedback(null);
+                        setSelectedOfficer('');
+                        setCriteria(3);
+                        setComment('');
+                        setAnonymous(false);
+                        setError(null);
+                        setMsg(null);
+                      }}
+                    >
+                      Hủy
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
           </div>
@@ -440,15 +624,51 @@ const FeedbackPage: React.FC = () => {
                 ) : (
                   recentFeedbacks.map(feedback => {
                     const label = normalizeCriteriaLabel(feedback.TieuChi, feedback.MucLabel);
-                    // Hiển thị tên người gửi: nếu là ẩn danh thì "Ẩn danh", nếu là người đăng nhập thì "Tôi", còn lại lấy tên từ API
-                    let displaySender = "Ẩn danh";
-                    if (feedback.TenNguoiGui !== "Ẩn danh") {
-                      if (feedback.NguoiGui && feedback.NguoiGui === currentUserId) {
-                        displaySender = "Tôi";
-                      } else {
-                        displaySender = feedback.TenNguoiGui;
-                      }
+                    // Chỉ hiện nút sửa/xóa nếu đúng quyền hoặc là chính chủ feedback
+                    if (!canEditFeedback(feedback)) {
+                      return (
+                        <div key={feedback.MaDanhGia} className="feedback-item">
+                          {/* ...existing code for feedback display, không có nút sửa/xóa... */}
+                          <div className="feedback-top">
+                            <strong className="target-name">
+                              {feedback.TenCanSu}
+                              <span style={{ color: '#64748b', fontWeight: 400, marginLeft: 8, fontSize: '0.98em' }}>
+                                {feedback.CanSuDuocDanhGia ? `(ID: ${feedback.CanSuDuocDanhGia})` : ''}
+                              </span>
+                            </strong>
+                            <div className="rating-info">
+                              <span 
+                                className="stars"
+                                style={{ color: getCriteriaColor(feedback.TieuChi, feedback.MucLabel) }}
+                              >
+                                {getStarRating(feedback.TieuChi, feedback.MucLabel)}
+                              </span>
+                              <span className="criteria">
+                                {label}
+                              </span>
+                            </div>
+                          </div>
+                          {feedback.NoiDung && (
+                            <div className="feedback-content">
+                              "{feedback.NoiDung}"
+                            </div>
+                          )}
+                          <div className="feedback-bottom">
+                            <span className="author">
+                              {feedback.TenNguoiGui === 'Ẩn danh'
+                                ? <>Người gửi: <b>Ẩn danh</b></>
+                                : <>Người gửi: <b>{feedback.TenNguoiGui}</b></>
+                              }
+                            </span>
+                            <span className="time">{getTimeAgo(feedback.NgayGui)}</span>
+                            <span className="date" style={{ marginLeft: 8, color: '#64748b', fontSize: '0.95em' }}>
+                              {feedback.NgayGui ? new Date(feedback.NgayGui).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : ''}
+                            </span>
+                          </div>
+                        </div>
+                      );
                     }
+                    // Có quyền thì hiện nút sửa/xóa
                     return (
                       <div key={feedback.MaDanhGia} className="feedback-item">
                         <div className="feedback-top">
@@ -469,24 +689,36 @@ const FeedbackPage: React.FC = () => {
                               {label}
                             </span>
                           </div>
-                          {/* Nút xóa chỉ hiện với feedback của chính mình */}
-                          {feedback.NguoiGui === currentUserId && (
-                            <button
-                              className="delete-feedback-btn"
-                              title="Xóa đánh giá"
-                              style={{
-                                marginLeft: 8,
-                                background: 'none',
-                                border: 'none',
-                                color: '#d32f2f',
-                                cursor: 'pointer',
-                                fontSize: '1.1em'
-                              }}
-                              onClick={() => handleDeleteFeedback(feedback.MaDanhGia)}
-                            >
-                              🗑
-                            </button>
-                          )}
+                          <button
+                            className="delete-feedback-btn"
+                            title="Sửa đánh giá"
+                            style={{
+                              marginLeft: 8,
+                              background: 'none',
+                              border: 'none',
+                              color: '#2563eb',
+                              cursor: 'pointer',
+                              fontSize: '1.1em'
+                            }}
+                            onClick={() => handleEditFeedback(feedback)}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="delete-feedback-btn"
+                            title="Xóa đánh giá"
+                            style={{
+                              marginLeft: 8,
+                              background: 'none',
+                              border: 'none',
+                              color: '#d32f2f',
+                              cursor: 'pointer',
+                              fontSize: '1.1em'
+                            }}
+                            onClick={() => handleDeleteFeedback(feedback.MaDanhGia)}
+                          >
+                            🗑
+                          </button>
                         </div>
                         {feedback.NoiDung && (
                           <div className="feedback-content">
@@ -495,7 +727,10 @@ const FeedbackPage: React.FC = () => {
                         )}
                         <div className="feedback-bottom">
                           <span className="author">
-                            Người gửi: <b>{displaySender}</b>
+                            {feedback.TenNguoiGui === 'Ẩn danh'
+                              ? <>Người gửi: <b>Ẩn danh</b></>
+                              : <>Người gửi: <b>{feedback.TenNguoiGui}</b></>
+                            }
                           </span>
                           <span className="time">{getTimeAgo(feedback.NgayGui)}</span>
                           <span className="date" style={{ marginLeft: 8, color: '#64748b', fontSize: '0.95em' }}>
@@ -508,7 +743,7 @@ const FeedbackPage: React.FC = () => {
                 )}
               </div>
 
-              {recentFeedbacks.length > 0 && (
+              {recentFeedbacks.length > 0 && (userRole === 'admin' || userRole === 'giangvien') && (
                 <div className="feedback-footer">
                   <button 
                     className="view-more"

@@ -34,6 +34,21 @@ const CanSuList: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const { user } = useUser();
 
+  // Phân quyền: chỉ admin và giảng viên được thêm/sửa/xóa, còn lại chỉ xem
+  function getUserRole(user: any): string {
+    if (!user) return '';
+    return (
+      user.VaiTro ||
+      user.role ||
+      user.vaitro ||
+      user.Role ||
+      user.ROLE ||
+      ''
+    ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  }
+  const userRole = getUserRole(user);
+  const canEdit = userRole === 'admin' || userRole === 'giangvien';
+
   const fetchData = () => {
     setLoading(true);
     // Lấy cả danh sách cán sự và user song song
@@ -112,6 +127,7 @@ const CanSuList: React.FC = () => {
   };
 
   const handleEdit = (item: CanSu) => {
+    if (!canEdit) return;
     setEditing(item);
     setShowForm(true);
     setForm({
@@ -147,6 +163,10 @@ const CanSuList: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEdit) {
+      setError('Bạn không có quyền thực hiện thao tác này.');
+      return;
+    }
     // Kiểm tra MaLop phải là số hợp lệ và có trong danh sách lớp
     const validLop = classes.find((lop: any) => String(lop.MaLop) === String(form.MaLop));
     if (!form.MaLop || !validLop) {
@@ -198,6 +218,10 @@ const CanSuList: React.FC = () => {
   };
 
   const handleDelete = (id: number) => {
+    if (!canEdit) {
+      setError('Bạn không có quyền xóa cán sự.');
+      return;
+    }
     if (window.confirm('Bạn có chắc chắn muốn xóa cán sự này?')) {
       axios.delete(`/cansu/${id}`)
         .then(() => fetchData())
@@ -206,11 +230,11 @@ const CanSuList: React.FC = () => {
   };
 
   const openForm = (editItem?: any) => {
+    if (!canEdit) return;
     setShowForm(true);
     axios.get('/lop/all')
       .then(res => setClasses(res.data))
       .catch(() => setClasses([]));
-    // Khi mở form, không lấy toàn bộ user nữa, chỉ lấy khi chọn lớp
     setFilteredUsers([]);
     setForm(prev => ({ ...prev, MaNguoiDung: 0 }));
   };
@@ -221,7 +245,7 @@ const CanSuList: React.FC = () => {
   return (
     <div className="cansu-list-page">
       <h2>Danh sách cán sự</h2>
-      {showForm && (
+      {showForm && canEdit && (
         <form className="cansu-form" onSubmit={handleSubmit}>
           <h3 className="cansu-form-title">
             {editing ? 'Cập nhật cán sự' : 'Thêm cán sự mới'}
@@ -310,56 +334,58 @@ const CanSuList: React.FC = () => {
           </div>
         </form>
       )}
-      <button className="action-btn" title="Thêm mới" onClick={() => openForm()}>
-        <i className="fas fa-plus"></i>
-      </button>
-      <table className="cansu-table" style={{ minWidth: 900, overflowX: 'auto', display: 'block' }}>
-        <thead>
-          <tr>
-            <th>Người thêm</th>
-            <th>Người được thêm</th>
-            <th>Tên lớp</th>
-            <th>Chức vụ</th>
-            <th>Từ ngày</th>
-            <th>Đến ngày</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cansu.map(item => (
-            <tr key={item.MaCanSu}>
-              <td>
-                {/* Hiển thị tên người thêm là họ tên người đang đăng nhập */}
-                {item.TenCanSu  || ''}
-              </td>
-              <td>
-                {/* Hiển thị tên người được thêm */}
-                {item.TenCanSu || ''}
-              </td>
-              <td>{item.TenLop || ''}</td>
-              <td>{item.ChucVu}</td>
-              <td>{item.TuNgay ? new Date(item.TuNgay).toLocaleDateString() : ''}</td>
-              <td>{item.DenNgay ? new Date(item.DenNgay).toLocaleDateString() : ''}</td>
-              <td>
-                <button
-                  className="action-btn"
-                  title="Sửa"
-                  onClick={() => handleEdit(item)}
-                >
-                  <i className="fas fa-edit"></i>
-                </button>
-                <button
-                  className="action-btn delete"
-                  title="Xóa"
-                  onClick={() => handleDelete(item.MaCanSu)}
-                >
-                  <i className="fas fa-trash-alt"></i>
-                </button>
-              </td>
+      {canEdit && (
+        <button className="action-btn" title="Thêm mới" onClick={() => openForm()}>
+          <i className="fas fa-plus"></i>
+        </button>
+      )}
+      <div className="table-wrapper">
+        <table className="cansu-table">
+          <thead>
+            <tr>
+              <th>Người thêm</th>
+              <th>Người được thêm</th>
+              <th>Tên lớp</th>
+              <th>Chức vụ</th>
+              <th>Từ ngày</th>
+              <th>Đến ngày</th>
+              <th>Hành động</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {cansu.map(item => (
+              <tr key={item.MaCanSu}>
+                <td>{item.TenCanSu || ''}</td>
+                <td>{item.TenCanSu || ''}</td>
+                <td>{item.TenLop || ''}</td>
+                <td>{item.ChucVu}</td>
+                <td>{item.TuNgay ? new Date(item.TuNgay).toLocaleDateString() : ''}</td>
+                <td>{item.DenNgay ? new Date(item.DenNgay).toLocaleDateString() : ''}</td>
+                <td>
+                  {canEdit && (
+                    <>
+                      <button
+                        className="action-btn"
+                        title="Sửa"
+                        onClick={() => handleEdit(item)}
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        className="action-btn delete"
+                        title="Xóa"
+                        onClick={() => handleDelete(item.MaCanSu)}
+                      >
+                        <i className="fas fa-trash-alt"></i>
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
