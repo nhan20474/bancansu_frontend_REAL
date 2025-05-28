@@ -87,6 +87,21 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownOpen]);
 
+  // Lắng nghe sự kiện reload từ avatar update
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      // Reload trang để đồng bộ avatar mới
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    };
+
+    window.addEventListener('avatarUpdated', handleAvatarUpdate);
+    return () => {
+      window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+    };
+  }, []);
+
   return (
     <nav className="top-navbar d-flex justify-between align-center px-3">
       <div className="d-flex align-center">
@@ -209,7 +224,7 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
                 <ul>
                   <li className="disabled">Tài khoản</li>
                   <li>
-                    <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link to="/profilepage" style={{ textDecoration: 'none', color: 'inherit' }}>
                       <i className="fas fa-user" style={{ marginRight: '8px' }}></i>
                       Hồ sơ cá nhân
                     </Link>
