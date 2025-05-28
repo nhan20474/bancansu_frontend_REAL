@@ -126,6 +126,168 @@
   background: #ffeaea;
 }
 
+/* Credibility Section */
+.credibility-section {
+  margin-top: 32px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.section-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 8px 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.section-icon {
+  font-size: 1.5rem;
+}
+
+.section-subtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* Table Container */
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.credibility-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.credibility-table th {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: none;
+}
+
+.credibility-table th.stt-col { 
+  width: 80px; 
+  text-align: center; 
+}
+
+.credibility-table th.name-col { 
+  width: 60%; 
+}
+
+.credibility-table th.score-col { 
+  width: 30%; 
+  text-align: center; 
+}
+
+.credibility-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.officer-row:hover {
+  background: #f8fafc;
+}
+
+/* STT Cell */
+.stt-cell {
+  text-align: center;
+}
+
+.stt-number {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+/* Officer Info */
+.officer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.officer-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.officer-id {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Score Cell */
+.score-cell {
+  text-align: center;
+}
+
+.score-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #2563eb;
+}
+
+/* Empty State */
+.empty-row td {
+  padding: 32px;
+  text-align: center;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .credibility-section {
+    padding: 16px;
+    margin-top: 24px;
+  }
+  
+  .section-title {
+    font-size: 1.2rem;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .credibility-table th,
+  .credibility-table td {
+    padding: 12px 8px;
+    font-size: 0.85rem;
+  }
+}
+
 @media (max-width: 900px) {
   .reports-charts {
     flex-direction: column;

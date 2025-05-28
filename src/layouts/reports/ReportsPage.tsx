@@ -129,60 +129,71 @@ const ReportsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Bảng điểm trung bình cán sự */}
-            <div style={{ marginTop: 32 }}>
-              <h3 style={{ marginBottom: 12 }}>🎯 Điểm trung bình cán sự</h3>
-              <table className="reports-table">
-                <thead>
-                  <tr>
-                    <th>STT</th>
-                    <th>Họ tên cán sự</th>
-                    <th>Điểm trung bình</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {officerScores.length === 0 ? (
+            {/* Bảng độ tín nhiệm cán sự */}
+            <div className="credibility-section">
+              <div className="section-header">
+                <h3 className="section-title">
+                  <span className="section-icon">🎯</span>
+                  Độ tín nhiệm của cán sự
+                </h3>
+                <p className="section-subtitle">
+                  Độ tín nhiệm của các cán sự trong lớp
+                </p>
+              </div>
+              
+              <div className="table-container">
+                <table className="credibility-table">
+                  <thead>
                     <tr>
-                      <td colSpan={3} style={{ textAlign: 'center' }}>Không có dữ liệu</td>
+                      <th className="stt-col">STT</th>
+                      <th className="name-col">Họ tên cán sự</th>
+                      <th className="score-col">Độ tín nhiệm</th>
                     </tr>
-                  ) : (
-                    officerScores.map((o, idx) => {
-                      // Ép kiểu về số thực nếu cần
-                      const diem = typeof o.DiemTrungBinh === 'string'
-                        ? parseFloat(o.DiemTrungBinh)
-                        : o.DiemTrungBinh;
-                      return (
-                        <tr key={o.MaNguoiDung}>
-                          <td>{idx + 1}</td>
-                          <td>{o.HoTen}</td>
-                          <td>
-                            <span style={{
-                              color:
-                                diem >= 4.5 ? '#059669' :
-                                diem >= 4 ? '#16a34a' :
-                                diem >= 3 ? '#ca8a04' :
-                                diem >= 2 ? '#ea580c' :
-                                '#dc2626',
-                              fontWeight: 600
-                            }}>
-                              {diem == null
-                                ? '-'
-                                : (Number.isInteger(diem)
-                                    ? diem
-                                    : diem.toFixed(2).replace(/\.?0+$/, ''))}{' '}
-                              <span style={{ color: '#f59e42', fontSize: '1.1em' }}>
-                                {diem && diem > 0
-                                  ? '★'.repeat(Math.round(diem)) + '☆'.repeat(5 - Math.round(diem))
-                                  : ''}
+                  </thead>
+                  <tbody>
+                    {officerScores.length === 0 ? (
+                      <tr className="empty-row">
+                        <td colSpan={3}>
+                          <div className="empty-state">
+                            <span className="empty-icon">📊</span>
+                            <p>Chưa có dữ liệu đánh giá</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      officerScores.map((officer, idx) => {
+                        // Ép kiểu về số thực nếu cần
+                        const score = typeof officer.DiemTrungBinh === 'string'
+                          ? parseFloat(officer.DiemTrungBinh)
+                          : officer.DiemTrungBinh;
+                        
+                        return (
+                          <tr key={officer.MaNguoiDung} className="officer-row">
+                            <td className="stt-cell">
+                              <span className="stt-number">{idx + 1}</span>
+                            </td>
+                            <td className="name-cell">
+                              <div className="officer-info">
+                                <span className="officer-name">{officer.HoTen}</span>
+                                <span className="officer-id">ID: {officer.MaNguoiDung}</span>
+                              </div>
+                            </td>
+                            <td className="score-cell">
+                              <span className="score-value">
+                                {score == null
+                                  ? '-'
+                                  : (Number.isInteger(score)
+                                      ? score
+                                      : score.toFixed(2).replace(/\.?0+$/, ''))}
                               </span>
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Nút xuất báo cáo */}

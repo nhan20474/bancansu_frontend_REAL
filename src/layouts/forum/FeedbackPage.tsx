@@ -611,7 +611,7 @@ const FeedbackPage: React.FC = () => {
                 <h2>Đánh giá gần đây</h2>
                 <div className="stats">
                   <span>{feedbackStats.total} đánh giá</span>
-                  <span>TB: {feedbackStats.avgRating}/5</span>
+                  <span>Độ tín nhiệm: {feedbackStats.avgRating}/5</span>
                 </div>
               </div>
               
