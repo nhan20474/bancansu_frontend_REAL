@@ -335,8 +335,23 @@ const CanSuList: React.FC = () => {
         </form>
       )}
       {canEdit && (
-        <button className="action-btn" title="Thêm mới" onClick={() => openForm()}>
-          <i className="fas fa-plus"></i>
+        <button
+          className="action-btn"
+          title="Thêm mới"
+          onClick={() => openForm()}
+          style={{
+            marginBottom: 18,
+            background: "#2563eb",
+            color: "#fff",
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: "1rem",
+            padding: "8px 18px",
+            boxShadow: "0 2px 8px #2563eb22",
+            border: "none"
+          }}
+        >
+          <i className="fas fa-plus"></i> Thêm cán sự mới
         </button>
       )}
       <div className="table-wrapper">
@@ -367,6 +382,15 @@ const CanSuList: React.FC = () => {
                       <button
                         className="action-btn"
                         title="Sửa"
+                        style={{
+                          background: "#e0e7ef",
+                          color: "#2563eb",
+                          borderRadius: 6,
+                          border: "none",
+                          marginRight: 6,
+                          padding: "6px 10px",
+                          fontSize: "1.1rem"
+                        }}
                         onClick={() => handleEdit(item)}
                       >
                         <i className="fas fa-edit"></i>
@@ -374,6 +398,15 @@ const CanSuList: React.FC = () => {
                       <button
                         className="action-btn delete"
                         title="Xóa"
+                        style={{
+                          background: "#fdeaea",
+                          color: "#d32f2f",
+                          borderRadius: 6,
+                          border: "none",
+                          marginRight: 6,
+                          padding: "6px 10px",
+                          fontSize: "1.1rem"
+                        }}
                         onClick={() => handleDelete(item.MaCanSu)}
                       >
                         <i className="fas fa-trash-alt"></i>

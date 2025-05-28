@@ -19,6 +19,7 @@ import ChangePassword from './layouts/user/ChangePasswordForm';
 import TaskList from './layouts/tasks/TaskList';
 import { UserProvider, useUser } from './contexts/UserContext';
 import './App.css';
+import BotChat from './layouts/components/BotChat';
 
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -99,6 +100,7 @@ function App() {
   return (
     <UserProvider>
       <AppContent />
+      <BotChat />
     </UserProvider>
   );
 }

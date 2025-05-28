@@ -319,7 +319,21 @@ const TaskList: React.FC = () => {
       <h2>Danh sách nhiệm vụ</h2>
       {successMsg && <div className="form-success">{successMsg}</div>}
       {canEdit && (
-        <button className="action-btn" onClick={() => openForm(null)}>
+        <button
+          className="action-btn"
+          onClick={() => openForm(null)}
+          style={{
+            marginBottom: 18,
+            background: "#2563eb",
+            color: "#fff",
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: "1rem",
+            padding: "8px 18px",
+            boxShadow: "0 2px 8px #2563eb22",
+            border: "none"
+          }}
+        >
           <i className="fas fa-plus"></i> Thêm nhiệm vụ mới
         </button>
       )}
@@ -465,29 +479,53 @@ const TaskList: React.FC = () => {
                   <td>
                     <button
                       className="action-btn"
+                      style={{
+                        background: "#2563eb",
+                        color: "#fff",
+                        borderRadius: 6,
+                        border: "none",
+                        padding: "6px 10px",
+                        fontSize: "1.1rem"
+                      }}
                       onClick={() => {
                         setSelectedTask(task);
                         fetchTaskDetail(task.MaNhiemVu);
                       }}
-                      title="Xem chi tiết nhiệm vụ"
+                      title="Nộp bài"
                     >
-                      <i className="fas fa-eye"></i> Xem
+                      <i className="fas fa-upload"></i>
                     </button>
                     {canEdit && (
                       <>
                         <button
                           className="action-btn"
                           title="Sửa"
+                          style={{
+                            background: "#e0e7ef",
+                            color: "#2563eb",
+                            borderRadius: 6,
+                            border: "none",
+                            marginLeft: 4,
+                            padding: "6px 10px",
+                            fontSize: "1.1rem"
+                          }}
                           onClick={() => openForm(task)}
-                          style={{ marginLeft: 4 }}
                         >
                           <i className="fas fa-edit"></i>
                         </button>
                         <button
                           className="action-btn delete"
                           title="Xóa"
+                          style={{
+                            background: "#fdeaea",
+                            color: "#d32f2f",
+                            borderRadius: 6,
+                            border: "none",
+                            marginLeft: 4,
+                            padding: "6px 10px",
+                            fontSize: "1.1rem"
+                          }}
                           onClick={() => handleDelete(task.MaNhiemVu)}
-                          style={{ marginLeft: 4 }}
                         >
                           <i className="fas fa-trash-alt"></i>
                         </button>

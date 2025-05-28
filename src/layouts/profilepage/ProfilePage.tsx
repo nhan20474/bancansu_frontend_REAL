@@ -209,10 +209,11 @@ const ProfilePage: React.FC = () => {
 
     setSaving(true);
     try {
-      const response = await axios.put('/user/profile', {
-        userId: user?.userId,
-        Email: editForm.Email.trim(),
-        SoDienThoai: editForm.SoDienThoai.trim()
+      // Gửi đúng trường cho backend (MaNguoiDung, email, phone)
+      const response = await axios.post('/user/change-contact', {
+        MaNguoiDung: user?.userId,
+        email: editForm.Email.trim(),
+        phone: editForm.SoDienThoai.trim()
       });
 
       if (response.data.success) {

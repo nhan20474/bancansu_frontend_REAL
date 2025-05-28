@@ -42,7 +42,7 @@ const CRITERIA_OPTIONS = [
 const FeedbackPage: React.FC = () => {
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [selectedOfficer, setSelectedOfficer] = useState('');
-  const [criteria, setCriteria] = useState<number>(3);
+  const [criteria, setCriteria] = useState<number>(3); // Mặc định là 3 (Khá)
   const [comment, setComment] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -219,7 +219,6 @@ const FeedbackPage: React.FC = () => {
         return;
       }
 
-      const currentCriteria = getCurrentCriteria();
       if (isNaN(Number(selectedOfficer))) {
         setError('Vui lòng chọn cán sự hợp lệ.');
         setLoading(false);
@@ -229,8 +228,8 @@ const FeedbackPage: React.FC = () => {
       const payload = {
         NguoiGui: anonymous ? null : currentUserId,
         CanSuDuocDanhGia: Number(selectedOfficer),
-        TieuChi: currentCriteria.text,
-        NoiDung: comment || `Đánh giá: ${currentCriteria.text}`,
+        TieuChi: criteria, // Gửi số (1-5) thay vì chuỗi
+        NoiDung: comment || `Đánh giá: ${CRITERIA_OPTIONS.find(opt => opt.value === criteria)?.text || ''}`,
         AnDanh: anonymous ? true : false
       };
 
@@ -320,8 +319,8 @@ const FeedbackPage: React.FC = () => {
       }
 
       const payload = {
-        TieuChi: currentCriteria.text,
-        NoiDung: comment || `Đánh giá: ${currentCriteria.text}`,
+        TieuChi: criteria, // Gửi số (1-5) thay vì chuỗi
+        NoiDung: comment || `Đánh giá: ${CRITERIA_OPTIONS.find(opt => opt.value === criteria)?.text || ''}`,
         AnDanh: anDanhValue,
         NguoiGui: nguoiGuiValue
       };

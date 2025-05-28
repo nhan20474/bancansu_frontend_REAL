@@ -171,6 +171,21 @@
 
 .cansu-table td {
   vertical-align: middle;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cansu-table td .action-btn,
+.cansu-table td .action-btn.delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 4px 4px 0;
+  vertical-align: middle;
+}
+
+.cansu-table td .action-btn:last-child {
+  margin-right: 0;
 }
 
 /* Thêm style cho icon hành động */

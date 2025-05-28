@@ -32,6 +32,8 @@ const ReportsPage: React.FC = () => {
       .then(res => {
         setStats(res.data.tongquan);
         setOfficerScores(res.data.diemTrungBinhCanSu);
+        // Thêm dòng này để kiểm tra dữ liệu trả về
+        console.log('DiemTrungBinhCanSu:', res.data.diemTrungBinhCanSu);
         setLoading(false);
       })
       .catch(() => {
@@ -42,7 +44,8 @@ const ReportsPage: React.FC = () => {
 
   const handleExport = async (type: 'excel' | 'pdf') => {
     try {
-      const res = await axios.get(`/api/reports/export?type=${type}`, {
+      // Chỉ cần gọi 'reports/export?type=excel' nếu đã có baseURL là /api
+      const res = await axios.get(`reports/export?type=${type}`, {
         responseType: 'blob',
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -143,13 +146,40 @@ const ReportsPage: React.FC = () => {
                       <td colSpan={3} style={{ textAlign: 'center' }}>Không có dữ liệu</td>
                     </tr>
                   ) : (
-                    officerScores.map((o, idx) => (
-                      <tr key={o.MaNguoiDung}>
-                        <td>{idx + 1}</td>
-                        <td>{o.HoTen}</td>
-                        <td>{o.DiemTrungBinh}</td>
-                      </tr>
-                    ))
+                    officerScores.map((o, idx) => {
+                      // Ép kiểu về số thực nếu cần
+                      const diem = typeof o.DiemTrungBinh === 'string'
+                        ? parseFloat(o.DiemTrungBinh)
+                        : o.DiemTrungBinh;
+                      return (
+                        <tr key={o.MaNguoiDung}>
+                          <td>{idx + 1}</td>
+                          <td>{o.HoTen}</td>
+                          <td>
+                            <span style={{
+                              color:
+                                diem >= 4.5 ? '#059669' :
+                                diem >= 4 ? '#16a34a' :
+                                diem >= 3 ? '#ca8a04' :
+                                diem >= 2 ? '#ea580c' :
+                                '#dc2626',
+                              fontWeight: 600
+                            }}>
+                              {diem == null
+                                ? '-'
+                                : (Number.isInteger(diem)
+                                    ? diem
+                                    : diem.toFixed(2).replace(/\.?0+$/, ''))}{' '}
+                              <span style={{ color: '#f59e42', fontSize: '1.1em' }}>
+                                {diem && diem > 0
+                                  ? '★'.repeat(Math.round(diem)) + '☆'.repeat(5 - Math.round(diem))
+                                  : ''}
+                              </span>
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
