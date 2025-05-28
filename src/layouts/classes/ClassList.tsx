@@ -51,6 +51,8 @@ function ClassList() {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [search, setSearch] = useState('');
+  const [searching, setSearching] = useState(false);
   const { user } = useUser();
   const userRole = getUserRole(user);
   // Chỉ admin và giảng viên được phép sửa/xóa/thêm
@@ -67,9 +69,9 @@ function ClassList() {
       if (Array.isArray(res.data)) {
         data = res.data;
       } else if (res.data && typeof res.data === 'object') {
-        // Nếu trả về 1 object đơn, ép thành mảng
         data = [res.data];
       }
+      console.log('API /lop response:', data); // Thêm log để kiểm tra dữ liệu trả về
       setClasses(data);
     } catch (err) {
       setError('Không thể tải danh sách lớp học.');
@@ -376,12 +378,97 @@ function ClassList() {
     }
   };
 
+  // Thêm hàm tìm kiếm lớp học
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!search.trim()) {
+      fetchData();
+      return;
+    }
+    setSearching(true);
+    setError(null);
+    try {
+      const res = await axios.get(`/lop/search?q=${encodeURIComponent(search.trim())}`);
+      let data: ClassItem[] = [];
+      if (Array.isArray(res.data)) {
+        data = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        data = [res.data];
+      }
+      setClasses(data);
+    } catch (err) {
+      setError('Không tìm thấy lớp phù hợp.');
+      setClasses([]);
+    }
+    setSearching(false);
+  };
+
   if (loading) return <div className="class-list-page">Đang tải danh sách lớp học...</div>;
   if (error) return <div className="class-list-page" style={{ color: 'red' }}>{error}</div>;
 
   return (
     <div className="class-list-page">
       <h2>Danh sách lớp học</h2>
+      {/* Thanh tìm kiếm lớp học */}
+      <form
+        onSubmit={handleSearch}
+        style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
+      >
+        <input
+          type="text"
+          placeholder="Tìm kiếm theo tên hoặc mã lớp..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            flex: 1,
+            padding: '0.55rem 0.9rem',
+            borderRadius: 7,
+            border: '1.5px solid #2563eb',
+            fontSize: '1.05rem',
+            background: '#f9fafe'
+          }}
+          disabled={loading || searching}
+        />
+        <button
+          type="submit"
+          className="action-btn"
+          style={{
+            background: '#2563eb',
+            color: '#fff',
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: '1rem',
+            padding: '8px 18px',
+            border: 'none'
+          }}
+          disabled={loading || searching}
+        >
+          <i className="fas fa-search"></i> Tìm kiếm
+        </button>
+        {search && (
+          <button
+            type="button"
+            className="action-btn delete"
+            style={{
+              background: '#e0e7ef',
+              color: '#2563eb',
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: '1rem',
+              padding: '8px 12px',
+              border: 'none'
+            }}
+            onClick={() => {
+              setSearch('');
+              fetchData();
+            }}
+            disabled={loading || searching}
+            title="Xóa tìm kiếm"
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        )}
+      </form>
       {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
       {showForm && canEdit && (
         <form className="class-form" onSubmit={handleSubmit}>
@@ -421,7 +508,7 @@ function ClassList() {
               name="KhoaHoc"
               value={form.KhoaHoc || ''}
               onChange={handleChange}
-              placeholder="Khóa học"
+              placeholder="Học kì"
               required
             />
           </div>
@@ -496,84 +583,86 @@ function ClassList() {
               <th style={{ width: 110 }}>Mã lớp học</th>
               <th style={{ width: 180 }}>Tên lớp</th>
               <th style={{ width: 160 }}>Môn học </th>
-              <th style={{ width: 110 }}>Khóa học</th>
+              <th style={{ width: 110 }}>Học kì</th>
               <th style={{ width: 180 }}>Giáo viên chủ nhiệm</th>
               <th style={{ width: 160, textAlign: "center" }}>Hành động</th>
             </tr>
           </thead>
           <tbody>
-            {classes.length === 0 && (
+            {/* Hiển thị trực tiếp danh sách lớp trả về từ API */}
+            {classes.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{textAlign:'center', color:'#888'}}>Không có dữ liệu lớp học</td>
               </tr>
+            ) : (
+              classes.map((item, idx) => (
+                <tr
+                  key={item.MaLop}
+                  style={{
+                    background: idx % 2 === 0 ? "#f9fafe" : "#fff",
+                    transition: "background 0.18s"
+                  }}
+                >
+                  <td style={{ fontWeight: 600, color: "#2563eb" }}>{item.MaLopHoc}</td>
+                  <td style={{ fontWeight: 500 }}>{item.TenLop}</td>
+                  <td>{item.ChuyenNganh}</td>
+                  <td>{item.KhoaHoc}</td>
+                  <td>
+                    {('TenGiaoVien' in item && item.TenGiaoVien)
+                      ? item.TenGiaoVien
+                      : teachers.find(gv => String(gv.id) === String(item.GiaoVien))?.name || '-'}
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    {canEdit && (
+                      <>
+                        <button
+                          className="action-btn"
+                          title="Sửa"
+                          onClick={() => handleEdit(item)}
+                          style={{
+                            marginRight: 6,
+                            background: "#e0e7ef",
+                            color: "#2563eb",
+                            borderRadius: 6,
+                            border: "none"
+                          }}
+                        >
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button
+                          className="action-btn delete"
+                          title="Xóa"
+                          onClick={() => handleDelete(item.MaLop)}
+                          style={{
+                            marginRight: 6,
+                            background: "#fdeaea",
+                            color: "#d32f2f",
+                            borderRadius: 6,
+                            border: "none"
+                          }}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
+                      </>
+                    )}
+                    <button
+                      className="action-btn"
+                      title="Xem thành viên"
+                      style={{
+                        marginLeft: 2,
+                        background: "#f1f5f9",
+                        color: "#2563eb",
+                        borderRadius: 6,
+                        border: "none"
+                      }}
+                      onClick={() => handleViewMembers(item)}
+                    >
+                      <i className="fas fa-users"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))
             )}
-            {classes.map((item, idx) => (
-              <tr
-                key={item.MaLop}
-                style={{
-                  background: idx % 2 === 0 ? "#f9fafe" : "#fff",
-                  transition: "background 0.18s"
-                }}
-              >
-                <td style={{ fontWeight: 600, color: "#2563eb" }}>{item.MaLopHoc}</td>
-                <td style={{ fontWeight: 500 }}>{item.TenLop}</td>
-                <td>{item.ChuyenNganh}</td>
-                <td>{item.KhoaHoc}</td>
-                <td>
-                  {('TenGiaoVien' in item && item.TenGiaoVien)
-                    ? item.TenGiaoVien
-                    : teachers.find(gv => String(gv.id) === String(item.GiaoVien))?.name || '-'}
-                </td>
-                <td style={{ textAlign: "center" }}>
-                  {canEdit && (
-                    <>
-                      <button
-                        className="action-btn"
-                        title="Sửa"
-                        onClick={() => handleEdit(item)}
-                        style={{
-                          marginRight: 6,
-                          background: "#e0e7ef",
-                          color: "#2563eb",
-                          borderRadius: 6,
-                          border: "none"
-                        }}
-                      >
-                        <i className="fas fa-edit"></i>
-                      </button>
-                      <button
-                        className="action-btn delete"
-                        title="Xóa"
-                        onClick={() => handleDelete(item.MaLop)}
-                        style={{
-                          marginRight: 6,
-                          background: "#fdeaea",
-                          color: "#d32f2f",
-                          borderRadius: 6,
-                          border: "none"
-                        }}
-                      >
-                        <i className="fas fa-trash-alt"></i>
-                      </button>
-                    </>
-                  )}
-                  <button
-                    className="action-btn"
-                    title="Xem thành viên"
-                    style={{
-                      marginLeft: 2,
-                      background: "#f1f5f9",
-                      color: "#2563eb",
-                      borderRadius: 6,
-                      border: "none"
-                    }}
-                    onClick={() => handleViewMembers(item)}
-                  >
-                    <i className="fas fa-users"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>

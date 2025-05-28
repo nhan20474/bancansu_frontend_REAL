@@ -53,6 +53,8 @@ const TaskList: React.FC = () => {
   const [classes, setClasses] = useState<Lop[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [searching, setSearching] = useState(false);
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -268,6 +270,34 @@ const TaskList: React.FC = () => {
     }
   };
 
+  // Thêm hàm tìm kiếm nhiệm vụ
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!search.trim()) {
+      fetchTasks();
+      return;
+    }
+    setSearching(true);
+    setError(null);
+    try {
+      // Đảm bảo endpoint đúng và luôn có dấu / ở đầu
+      const res = await axios.get(`/nhiemvu/search`, {
+        params: { q: search.trim() }
+      });
+      let data: Task[] = [];
+      if (Array.isArray(res.data)) {
+        data = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        data = [res.data];
+      }
+      setTasks(data);
+    } catch (err) {
+      setError('Không tìm thấy nhiệm vụ phù hợp.');
+      setTasks([]);
+    }
+    setSearching(false);
+  };
+
   // Phân quyền: chỉ admin và giảng viên được thêm/sửa/xóa, còn lại chỉ xem
   function getUserRole(user: any): string {
     if (!user) return '';
@@ -313,6 +343,66 @@ const TaskList: React.FC = () => {
   // --- BẮT ĐẦU PHẦN DANH SÁCH NHIỆM VỤ ---
   return (
     <div className="task-list-page" style={{ height: '100vh', overflowY: 'auto' }}>
+      {/* Thanh tìm kiếm nhiệm vụ */}
+      <form
+        onSubmit={handleSearch}
+        style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
+      >
+        <input
+          type="text"
+          placeholder="Tìm kiếm theo tiêu đề hoặc mô tả..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            flex: 1,
+            padding: '0.55rem 0.9rem',
+            borderRadius: 7,
+            border: '1.5px solid #2563eb',
+            fontSize: '1.05rem',
+            background: '#f9fafe'
+          }}
+          disabled={loading || searching}
+        />
+        <button
+          type="submit"
+          className="action-btn"
+          style={{
+            background: '#2563eb',
+            color: '#fff',
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: '1rem',
+            padding: '8px 18px',
+            border: 'none'
+          }}
+          disabled={loading || searching}
+        >
+          <i className="fas fa-search"></i> Tìm kiếm
+        </button>
+        {search && (
+          <button
+            type="button"
+            className="action-btn delete"
+            style={{
+              background: '#e0e7ef',
+              color: '#2563eb',
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: '1rem',
+              padding: '8px 12px',
+              border: 'none'
+            }}
+            onClick={() => {
+              setSearch('');
+              fetchTasks();
+            }}
+            disabled={loading || searching}
+            title="Xóa tìm kiếm"
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        )}
+      </form>
       <div style={{ marginBottom: 16 }}>
         
       </div>
@@ -428,7 +518,7 @@ const TaskList: React.FC = () => {
               <th>Hạn hoàn thành</th>
               <th>Mức độ ưu tiên</th>
               <th>Tên lớp</th>
-              <th>Ngày tạo</th>
+              <th>Hạn hoàn thành</th>
               <th>Tệp đính kèm</th>
               <th>Người giao</th>
               <th>Hành động</th>
@@ -457,7 +547,7 @@ const TaskList: React.FC = () => {
                     </span>
                   </td>
                   <td>{task.TenLop}</td>
-                  <td>{task.NgayTao ? new Date(task.NgayTao).toLocaleDateString('vi-VN') : ''}</td>
+                  <td>{task.HanHoanThanh ? new Date(task.HanHoanThanh).toLocaleDateString('vi-VN') : ''}</td>
                   <td>
                     {task.TepDinhKem
                       ? (

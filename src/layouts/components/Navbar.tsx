@@ -47,6 +47,17 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
     return '/icons8-user-default-100.png';
   };
 
+  // Cập nhật avatar khi user thay đổi (ví dụ: đổi avatar ở trang profile)
+  useEffect(() => {
+    setNotifications(propNotifications || []);
+  }, [propNotifications]);
+
+  // Theo dõi user.avatar thay đổi để cập nhật lại avatar trên navbar
+  useEffect(() => {
+    // Khi user đổi avatar ở profile, cập nhật lại avatar ở navbar
+    // (user context sẽ tự động cập nhật, chỉ cần re-render)
+  }, [user?.avatar]);
+
   useEffect(() => {
     axios.get('/thongbao/latest?limit=5')
       .then(res => setNotifications(res.data))

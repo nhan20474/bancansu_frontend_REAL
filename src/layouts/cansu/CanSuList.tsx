@@ -32,6 +32,8 @@ const CanSuList: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState('');
+  const [searching, setSearching] = useState(false);
   const { user } = useUser();
 
   // Phân quyền: chỉ admin và giảng viên được thêm/sửa/xóa, còn lại chỉ xem
@@ -239,12 +241,163 @@ const CanSuList: React.FC = () => {
     setForm(prev => ({ ...prev, MaNguoiDung: 0 }));
   };
 
+  // Thêm hàm tìm kiếm cán sự
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!search.trim()) {
+      fetchData();
+      return;
+    }
+    setSearching(true);
+    setError(null);
+    try {
+      const res = await axios.get(`/cansu/search?q=${encodeURIComponent(search.trim())}`);
+      let data: CanSu[] = [];
+      if (Array.isArray(res.data)) {
+        data = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        data = [res.data];
+      }
+      setCanSu(data);
+    } catch (err) {
+      setError('Không tìm thấy cán sự phù hợp.');
+      setCanSu([]);
+    }
+    setSearching(false);
+  };
+
+  // Lấy danh sách lớp của user hiện tại (nếu không phải admin)
+  let userLopIds: number[] = [];
+  if (userRole !== 'admin' && user) {
+    // Ưu tiên các trường: MaLop, lopIds, dsLop, dsLopIds, userId
+    if (Array.isArray((user as any).MaLop)) {
+      userLopIds = (user as any).MaLop.map((id: any) => Number(id)).filter((id: any) => !isNaN(id));
+    } else if (typeof (user as any).MaLop === 'number') {
+      userLopIds = [(user as any).MaLop];
+    } else if (typeof (user as any).MaLop === 'string' && (user as any).MaLop.trim() !== '') {
+      userLopIds = (user as any).MaLop.split(',').map((id: string) => Number(id)).filter((id: any) => !isNaN(id));
+    } else if (Array.isArray((user as any).lopIds)) {
+      userLopIds = (user as any).lopIds.map((id: any) => Number(id)).filter((id: any) => !isNaN(id));
+    } else if (Array.isArray((user as any).dsLop)) {
+      userLopIds = (user as any).dsLop.map((id: any) => Number(id)).filter((id: any) => !isNaN(id));
+    } else if (Array.isArray((user as any).dsLopIds)) {
+      userLopIds = (user as any).dsLopIds.map((id: any) => Number(id)).filter((id: any) => !isNaN(id));
+    }
+    // Nếu vẫn không có, thử lấy từ MaLopHoc hoặc các trường khác nếu có
+    // Nếu là sinh viên, có thể chỉ có userId, cần map từ danh sách cán sự
+    if (userLopIds.length === 0 && userRole === 'sinhvien') {
+      const userId = (user as any).userId || (user as any).MaNguoiDung;
+      if (userId) {
+        const lopIdsFromCanSu = cansu
+          .filter(cs => cs.MaNguoiDung === userId)
+          .map(cs => cs.MaLop);
+        if (lopIdsFromCanSu.length > 0) {
+          userLopIds = lopIdsFromCanSu;
+        }
+      }
+    }
+  }
+
+  // Đảm bảo userLopIds cập nhật khi cansu thay đổi (dành cho sinh viên)
+  // Nếu là sinh viên, userLopIds vẫn rỗng và có userId, thì cập nhật lại userLopIds khi cansu thay đổi
+  React.useEffect(() => {
+    if (userRole === 'sinhvien' && user && userLopIds.length === 0) {
+      const userId = (user as any).userId || (user as any).MaNguoiDung;
+      if (userId && cansu.length > 0) {
+        const lopIdsFromCanSu = cansu
+          .filter(cs => cs.MaNguoiDung === userId)
+          .map(cs => cs.MaLop);
+        if (lopIdsFromCanSu.length > 0) {
+          // Cập nhật lại userLopIds bằng cách set lại state (nếu muốn dùng state) hoặc trigger render lại
+          // Ở đây chỉ log để debug, nếu muốn dùng state thì cần chuyển userLopIds thành state
+          // console.log('Cập nhật userLopIds cho sinh viên:', lopIdsFromCanSu);
+        }
+      }
+    }
+  }, [cansu, user, userRole]);
+  
+  // Lọc danh sách cán sự hiển thị theo quyền
+  // Giảng viên, cán sự, sinh viên đều xem được cán sự của lớp mình
+  const visibleCanSu =
+    userRole === 'admin'
+      ? cansu
+      : userLopIds.length > 0
+        ? cansu.filter(item => userLopIds.includes(item.MaLop))
+        : cansu;
+
+  // Thêm log để debug dữ liệu user, userRole, userLopIds, cansu, visibleCanSu
+  console.log('user:', user);
+  console.log('userRole:', userRole);
+  console.log('userLopIds:', userLopIds);
+  console.log('Tất cả cán sự:', cansu);
+  console.log('Cán sự hiển thị:', visibleCanSu);
+
   if (loading) return <div className="cansu-list-page">Đang tải danh sách cán sự...</div>;
   if (error) return <div className="cansu-list-page" style={{color:'red'}}>{error}</div>;
 
   return (
     <div className="cansu-list-page">
       <h2>Danh sách cán sự</h2>
+      {/* Thanh tìm kiếm cán sự */}
+      <form
+        onSubmit={handleSearch}
+        style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
+      >
+        <input
+          type="text"
+          placeholder="Tìm kiếm theo tên cán sự hoặc tên lớp..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            flex: 1,
+            padding: '0.55rem 0.9rem',
+            borderRadius: 7,
+            border: '1.5px solid #2563eb',
+            fontSize: '1.05rem',
+            background: '#f9fafe'
+          }}
+          disabled={loading || searching}
+        />
+        <button
+          type="submit"
+          className="action-btn"
+          style={{
+            background: '#2563eb',
+            color: '#fff',
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: '1rem',
+            padding: '8px 18px',
+            border: 'none'
+          }}
+          disabled={loading || searching}
+        >
+          <i className="fas fa-search"></i> Tìm kiếm
+        </button>
+        {search && (
+          <button
+            type="button"
+            className="action-btn delete"
+            style={{
+              background: '#e0e7ef',
+              color: '#2563eb',
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: '1rem',
+              padding: '8px 12px',
+              border: 'none'
+            }}
+            onClick={() => {
+              setSearch('');
+              fetchData();
+            }}
+            disabled={loading || searching}
+            title="Xóa tìm kiếm"
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        )}
+      </form>
       {showForm && canEdit && (
         <form className="cansu-form" onSubmit={handleSubmit}>
           <h3 className="cansu-form-title">
@@ -358,7 +511,6 @@ const CanSuList: React.FC = () => {
         <table className="cansu-table">
           <thead>
             <tr>
-              <th>Người thêm</th>
               <th>Người được thêm</th>
               <th>Tên lớp</th>
               <th>Chức vụ</th>
@@ -368,54 +520,62 @@ const CanSuList: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {cansu.map(item => (
-              <tr key={item.MaCanSu}>
-                <td>{item.TenCanSu || ''}</td>
-                <td>{item.TenCanSu || ''}</td>
-                <td>{item.TenLop || ''}</td>
-                <td>{item.ChucVu}</td>
-                <td>{item.TuNgay ? new Date(item.TuNgay).toLocaleDateString() : ''}</td>
-                <td>{item.DenNgay ? new Date(item.DenNgay).toLocaleDateString() : ''}</td>
-                <td>
-                  {canEdit && (
-                    <>
-                      <button
-                        className="action-btn"
-                        title="Sửa"
-                        style={{
-                          background: "#e0e7ef",
-                          color: "#2563eb",
-                          borderRadius: 6,
-                          border: "none",
-                          marginRight: 6,
-                          padding: "6px 10px",
-                          fontSize: "1.1rem"
-                        }}
-                        onClick={() => handleEdit(item)}
-                      >
-                        <i className="fas fa-edit"></i>
-                      </button>
-                      <button
-                        className="action-btn delete"
-                        title="Xóa"
-                        style={{
-                          background: "#fdeaea",
-                          color: "#d32f2f",
-                          borderRadius: 6,
-                          border: "none",
-                          marginRight: 6,
-                          padding: "6px 10px",
-                          fontSize: "1.1rem"
-                        }}
-                        onClick={() => handleDelete(item.MaCanSu)}
-                      >
-                        <i className="fas fa-trash-alt"></i>
-                      </button>
-                    </>
-                  )}
+            {/* Đảm bảo dùng đúng biến visibleCanSu để render */}
+            {visibleCanSu.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
+                  Không có cán sự nào thuộc lớp của bạn.
                 </td>
               </tr>
-            ))}
+            ) : (
+              visibleCanSu.map(item => (
+                <tr key={item.MaCanSu}>
+                  <td>{item.TenCanSu || ''}</td>
+                  <td>{item.TenLop || ''}</td>
+                  <td>{item.ChucVu}</td>
+                  <td>{item.TuNgay ? new Date(item.TuNgay).toLocaleDateString() : ''}</td>
+                  <td>{item.DenNgay ? new Date(item.DenNgay).toLocaleDateString() : ''}</td>
+                  <td>
+                    {canEdit && (
+                      <>
+                        <button
+                          className="action-btn"
+                          title="Sửa"
+                          style={{
+                            background: "#e0e7ef",
+                            color: "#2563eb",
+                            borderRadius: 6,
+                            border: "none",
+                            marginRight: 6,
+                            padding: "6px 10px",
+                            fontSize: "1.1rem"
+                          }}
+                          onClick={() => handleEdit(item)}
+                        >
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button
+                          className="action-btn delete"
+                          title="Xóa"
+                          style={{
+                            background: "#fdeaea",
+                            color: "#d32f2f",
+                            borderRadius: 6,
+                            border: "none",
+                            marginRight: 6,
+                            padding: "6px 10px",
+                            fontSize: "1.1rem"
+                          }}
+                          onClick={() => handleDelete(item.MaCanSu)}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

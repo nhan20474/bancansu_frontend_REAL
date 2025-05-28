@@ -51,6 +51,8 @@ const FeedbackPage: React.FC = () => {
   const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackItem[]>([]);
   const [feedbackStats, setFeedbackStats] = useState({ total: 0, avgRating: 0 });
   const [anonymous, setAnonymous] = useState(false);
+  const [search, setSearch] = useState('');
+  const [searching, setSearching] = useState(false);
 
   // Thêm state để hiển thị form sửa riêng biệt
   const [editingFeedback, setEditingFeedback] = useState<FeedbackItem | null>(null);
@@ -466,6 +468,59 @@ const FeedbackPage: React.FC = () => {
     return String(feedback.NguoiGui) === String(currentUserId);
   };
 
+  // Tìm kiếm đánh giá theo nội dung hoặc tên người gửi
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!search.trim()) {
+      await loadRecentFeedbacks();
+      return;
+    }
+    setSearching(true);
+    setError(null);
+    try {
+      const response = await axios.get(`${API_BASE}/api/danhgia/search`, {
+        params: { q: search.trim() }
+      });
+      if (response.data && Array.isArray(response.data)) {
+        const recentData = response.data
+          .map((f: any) => ({
+            MaDanhGia: f.MaDanhGia,
+            TenCanSu: f.TenCanSu || '',
+            TieuChi: f.TieuChi || '',
+            NoiDung: f.NoiDung || '',
+            TenNguoiGui: f.TenNguoiGui || 'Ẩn danh',
+            NgayGui: f.NgayGui || '',
+            MucLabel: f.MucLabel || '',
+            NguoiGui: f.NguoiGui,
+            CanSuDuocDanhGia: f.CanSuDuocDanhGia,
+            AnDanh: f.AnDanh !== undefined ? f.AnDanh : (f.TenNguoiGui === 'Ẩn danh')
+          }))
+          .sort((a, b) => new Date(b.NgayGui).getTime() - new Date(a.NgayGui).getTime())
+          .slice(0, 6);
+        setRecentFeedbacks(recentData);
+        const total = recentData.length;
+        const ratings = recentData
+          .map(f => getStarsFromCriteria(f.TieuChi, f.MucLabel))
+          .filter(r => r > 0);
+        const avgRating = ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+          : 0;
+        setFeedbackStats({
+          total,
+          avgRating: Math.round(avgRating * 10) / 10
+        });
+      } else {
+        setRecentFeedbacks([]);
+        setFeedbackStats({ total: 0, avgRating: 0 });
+      }
+    } catch (err) {
+      setError('Không tìm thấy đánh giá phù hợp.');
+      setRecentFeedbacks([]);
+      setFeedbackStats({ total: 0, avgRating: 0 });
+    }
+    setSearching(false);
+  };
+
   return (
     <div className="feedback-page">
       <div className="page-container">
@@ -474,6 +529,67 @@ const FeedbackPage: React.FC = () => {
           <h1>Đánh giá cán sự lớp</h1>
           <p>Đóng góp ý kiến để cải thiện hoạt động lớp</p>
         </div>
+
+        {/* Thanh tìm kiếm đánh giá */}
+        <form
+          onSubmit={handleSearch}
+          style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
+        >
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo nội dung hoặc tên người gửi..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '0.55rem 0.9rem',
+              borderRadius: 7,
+              border: '1.5px solid #2563eb',
+              fontSize: '1.05rem',
+              background: '#f9fafe'
+            }}
+            disabled={dataLoading || searching}
+          />
+          <button
+            type="submit"
+            className="action-btn"
+            style={{
+              background: '#2563eb',
+              color: '#fff',
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: '1rem',
+              padding: '8px 18px',
+              border: 'none'
+            }}
+            disabled={dataLoading || searching}
+          >
+            <i className="fas fa-search"></i> Tìm kiếm
+          </button>
+          {(search || searching) && (
+            <button
+              type="button"
+              className="action-btn"
+              style={{
+                background: '#f3f4f6',
+                color: '#374151',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: '1rem',
+                padding: '8px 12px',
+                border: 'none'
+              }}
+              onClick={() => {
+                setSearch('');
+                loadRecentFeedbacks();
+              }}
+              disabled={dataLoading || searching}
+              title="Hủy tìm kiếm"
+            >
+              Hủy
+            </button>
+          )}
+        </form>
 
         <div className="content-grid">
           {/* Form Section */}

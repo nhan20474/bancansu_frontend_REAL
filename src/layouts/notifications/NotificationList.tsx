@@ -57,8 +57,10 @@ const NotificationList: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [classes, setClasses] = useState<{ MaLop: number, TenLop: string }[]>([]);
   const { user } = useUser();
+  const [search, setSearch] = useState('');
+  const [searching, setSearching] = useState(false);
 
-  // Phân quyền: chỉ admin và giáo viên được thêm/sửa/xóa, còn lại chỉ xem
+  // Phân quyền: cho phép admin, giảng viên và cán sự thêm/sửa/xóa thông báo
   function getUserRole(user: any): string {
     if (!user) return '';
     return (
@@ -71,7 +73,8 @@ const NotificationList: React.FC = () => {
     ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
   }
   const userRole = getUserRole(user);
-  const canEdit = userRole === 'admin' || userRole === 'giaovien';
+  // Cập nhật: cho phép cả admin, giảng viên (giangvien) và cán sự (cansu) thêm/sửa/xóa
+  const canEdit = userRole === 'admin' || userRole === 'giangvien' || userRole === 'cansu';
 
   const fetchData = () => {
     setLoading(true);
@@ -175,12 +178,8 @@ const NotificationList: React.FC = () => {
     }
 
     // Kiểm tra tất cả trường bắt buộc
-    if (
-      !form.TieuDe ||
-      !form.NoiDung ||
-      !form.MaLop
-    ) {
-      setError('Vui lòng nhập đầy đủ các trường: Tiêu đề, Nội dung, Mã lớp.');
+    if (!form.TieuDe || !form.NoiDung) {
+      setError('Vui lòng nhập đầy đủ các trường: Tiêu đề và Nội dung.');
       return;
     }
     setError(null);
@@ -188,7 +187,7 @@ const NotificationList: React.FC = () => {
     const formData = new FormData();
     formData.append('TieuDe', form.TieuDe || '');
     formData.append('NoiDung', form.NoiDung || '');
-    formData.append('MaLop', form.MaLop ? String(form.MaLop) : '');
+    // Không cần append MaLop nữa
     formData.append('NguoiGui', user?.userId ? String(user.userId) : '');
     if (form.AnhDinhKem) {
       if (typeof form.AnhDinhKem === 'string') {
@@ -236,6 +235,44 @@ const NotificationList: React.FC = () => {
     }
   };
 
+  // Thêm hàm tìm kiếm thông báo
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!search.trim()) {
+      fetchData();
+      return;
+    }
+    setSearching(true);
+    setError(null);
+    try {
+      // Tìm kiếm theo tên người gửi hoặc tiêu đề
+      const res = await axios.get(`/thongbao/search`, {
+        params: { q: search.trim() }
+      });
+      let data: Notification[] = [];
+      if (Array.isArray(res.data)) {
+        data = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        data = [res.data];
+      }
+      // Đảm bảo mỗi thông báo đều có trường AnhDinhKemUrl đúng
+      setNotifications(
+        data.map((item: Notification & { AnhDinhKemUrl?: string | null }) => ({
+          ...item,
+          AnhDinhKemUrl: item.AnhDinhKemUrl && typeof item.AnhDinhKemUrl === 'string' && item.AnhDinhKemUrl.trim() !== ''
+            ? item.AnhDinhKemUrl
+            : (item.AnhDinhKem && typeof item.AnhDinhKem === 'string' && item.AnhDinhKem.trim() !== '' && item.AnhDinhKem !== 'null'
+                ? getImageUrl(item.AnhDinhKem)
+                : undefined)
+        }))
+      );
+    } catch (err) {
+      setError('Không tìm thấy thông báo phù hợp.');
+      setNotifications([]);
+    }
+    setSearching(false);
+  };
+
   // Sắp xếp thông báo mới nhất lên đầu
   const sortedNotifications = [...notifications].sort((a, b) =>
     (b.ThoiGianGui || '').localeCompare(a.ThoiGianGui || '')
@@ -262,6 +299,66 @@ const NotificationList: React.FC = () => {
         <p>
           Cập nhật các thông báo mới nhất từ hệ thống, lớp học, cán sự. Nhấn vào từng thông báo để xem chi tiết hoặc mở liên kết liên quan.
         </p>
+        {/* Thanh tìm kiếm thông báo */}
+        <form
+          onSubmit={handleSearch}
+          style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
+        >
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên người gửi hoặc tiêu đề..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '0.55rem 0.9rem',
+              borderRadius: 7,
+              border: '1.5px solid #2563eb',
+              fontSize: '1.05rem',
+              background: '#f9fafe'
+            }}
+            disabled={loading || searching}
+          />
+          <button
+            type="submit"
+            className="action-btn"
+            style={{
+              background: '#2563eb',
+              color: '#fff',
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: '1rem',
+              padding: '8px 18px',
+              border: 'none'
+            }}
+            disabled={loading || searching}
+          >
+            <i className="fas fa-search"></i> Tìm kiếm
+          </button>
+          {search && (
+            <button
+              type="button"
+              className="action-btn delete"
+              style={{
+                background: '#e0e7ef',
+                color: '#2563eb',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: '1rem',
+                padding: '8px 12px',
+                border: 'none'
+              }}
+              onClick={() => {
+                setSearch('');
+                fetchData();
+              }}
+              disabled={loading || searching}
+              title="Xóa tìm kiếm"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+        </form>
         {canEdit && (
           <button className="feed-add-btn" title="Thêm thông báo mới" onClick={() => { setShowForm(true); setEditing(null); setForm({ ...emptyNotification }); setImagePreview(undefined); }}>
             <i className="fas fa-plus"></i> Đăng thông báo mới
@@ -286,19 +383,7 @@ const NotificationList: React.FC = () => {
             rows={4}
             required
           />
-          <select
-            name="MaLop"
-            value={form.MaLop || ''}
-            onChange={handleChange}
-            required
-          >
-            <option value="">--Chọn lớp--</option>
-            {classes.map(lop => (
-              <option key={lop.MaLop} value={lop.MaLop}>
-                {lop.TenLop}
-              </option>
-            ))}
-          </select>
+          {/* Đã xóa trường chọn lớp ở đây */}
           <input
             name="link"
             value={form.link || ''}
