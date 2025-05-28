@@ -26,6 +26,27 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
   const userRef = useRef<HTMLDivElement>(null); // Thêm ref cho tài khoản
   const { user, logout } = useUser();
 
+  // Hàm lấy URL ảnh đại diện cho navbar
+  const getNavbarAvatarUrl = (user: any): string => {
+    if (!user) return '/icons8-user-default-100.png';
+    
+    if (user.normalized && typeof user.normalized === 'string' && user.normalized.trim() !== '') {
+      return user.normalized;
+    }
+    if (user.avatar && user.avatar.startsWith('http')) {
+      return user.avatar;
+    }
+    if (user.HinhAnh && user.HinhAnh.trim() !== '') {
+      const file = user.HinhAnh.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
+      return `http://localhost:8080/uploads/${file}`;
+    }
+    if (user.avatar && user.avatar.trim() !== '') {
+      const file = user.avatar.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
+      return `http://localhost:8080/uploads/${file}`;
+    }
+    return '/icons8-user-default-100.png';
+  };
+
   useEffect(() => {
     axios.get('/thongbao/latest?limit=5')
       .then(res => setNotifications(res.data))
@@ -138,30 +159,78 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
             onClick={() => setDropdownOpen(!dropdownOpen)}
             style={{ position: 'relative' }}
           >
-            <i className="fas fa-user-circle avatar" style={{fontSize: '2rem', color: '#2563eb'}}></i>
+            <img
+              src={getNavbarAvatarUrl(user)}
+              alt="User Avatar"
+              className="navbar-avatar"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                cursor: 'pointer',
+                border: '2px solid #e5e7eb'
+              }}
+              onError={e => {
+                if ((e.target as HTMLImageElement).src.indexOf('/icons8-user-default-100.png') === -1) {
+                  (e.target as HTMLImageElement).src = '/icons8-user-default-100.png';
+                }
+              }}
+            />
             {dropdownOpen && (
               <div className="user-dropdown">
                 <div className="user-info">
-                  <strong>{user.name}</strong>
-                  <p>{user.email}</p>
-                  <p style={{fontSize: '0.85em', color: '#888'}}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                    <img
+                      src={getNavbarAvatarUrl(user)}
+                      alt="User Avatar"
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        marginRight: '12px'
+                      }}
+                      onError={e => {
+                        if ((e.target as HTMLImageElement).src.indexOf('/icons8-user-default-100.png') === -1) {
+                          (e.target as HTMLImageElement).src = '/icons8-user-default-100.png';
+                        }
+                      }}
+                    />
+                    <div>
+                      <strong>{user.name}</strong>
+                      <p style={{ margin: 0, fontSize: '0.9em', color: '#666' }}>{user.email}</p>
+                    </div>
+                  </div>
+                  <p style={{fontSize: '0.85em', color: '#888', margin: 0}}>
                     ID: {user.userId ?? 'Không có userId'}
                   </p>
                 </div>
                 <ul>
                   <li className="disabled">Tài khoản</li>
                   <li>
+                    <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <i className="fas fa-user" style={{ marginRight: '8px' }}></i>
+                      Hồ sơ cá nhân
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="/tasks" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <i className="fas fa-tasks" style={{ marginRight: '8px' }}></i>
                       Nhiệm vụ
                     </Link>
                   </li>
                   <li>
                     <Link to="/change-password" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <i className="fas fa-key" style={{ marginRight: '8px' }}></i>
                       Đổi mật khẩu
                     </Link>
                   </li>
                   <hr />
-                  <li className="logout" onClick={logout}>Đăng xuất</li>
+                  <li className="logout" onClick={logout}>
+                    <i className="fas fa-sign-out-alt" style={{ marginRight: '8px' }}></i>
+                    Đăng xuất
+                  </li>
                 </ul>
               </div>
             )}

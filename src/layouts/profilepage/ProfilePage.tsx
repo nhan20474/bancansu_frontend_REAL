@@ -55,7 +55,7 @@ const ProfilePage: React.FC = () => {
     if (user?.avatar && user.avatar.startsWith('http')) {
       return user.avatar;
     }
-    return '/avatar-placeholder.png';
+    return '/icons8-user-default-100.png';
   }
 
   useEffect(() => {
@@ -129,7 +129,7 @@ const ProfilePage: React.FC = () => {
           const file = data.user.HinhAnh.replace(/^(App[\\/])?(uploads[\\/])?/i, '').replace(/^[/\\]+/, '');
           avatarValue = `http://localhost:8080/uploads/${file}`;
         } else {
-          avatarValue = '/avatar-placeholder.png';
+          avatarValue = '/icons8-user-default-100.png';
         }
         hinhAnhValue = data.user.HinhAnh || '';
         setUser({ ...data.user, avatar: avatarValue, HinhAnh: hinhAnhValue });
@@ -331,8 +331,8 @@ const ProfilePage: React.FC = () => {
                       onClick={() => fileInputRef.current?.click()}
                       title="Nhấn để thay đổi ảnh đại diện"
                       onError={e => {
-                        if ((e.target as HTMLImageElement).src.indexOf('/avatar-placeholder.png') === -1) {
-                          (e.target as HTMLImageElement).src = '/avatar-placeholder.png';
+                        if ((e.target as HTMLImageElement).src.indexOf('/icons8-user-default-100.png') === -1) {
+                          (e.target as HTMLImageElement).src = '/icons8-user-default-100.png';
                         }
                       }}
                     />
@@ -387,7 +387,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className="student-id">
                   <i className="fas fa-id-card"></i>
-                  <span>MSSV: {profile.MaSoSV}</span>
+                  <span>MS: {profile.MaSoSV}</span>
                 </div>
                 <div className="status-badge active">
                   <i className="fas fa-circle"></i>
@@ -485,7 +485,7 @@ const ProfilePage: React.FC = () => {
                     <div className="info-field readonly">
                       <label>
                         <i className="fas fa-id-card"></i>
-                        Mã số sinh viên
+                        Mã số
                       </label>
                       <div className="field-value">
                         {profile.MaSoSV}

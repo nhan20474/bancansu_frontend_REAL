@@ -100,13 +100,29 @@ const Login = () => {
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleLogin}>
-        <h2>Đăng nhập</h2>
-        <p className="subtitle">Chào mừng bạn quay trở lại</p>
+        {/* Enhanced Header */}
+        <div className="form-header">
+          <div className="header-icon">
+            <i className="fas fa-sign-in-alt"></i>
+          </div>
+          <h2>Đăng nhập</h2>
+          <p className="subtitle">Chào mừng bạn quay trở lại</p>
+        </div>
         
-        {error && <div className="form-error">{error}</div>}
+        {/* Enhanced Error Message */}
+        {error && (
+          <div className="form-message error">
+            <i className="fas fa-exclamation-circle"></i>
+            <span>{error}</span>
+          </div>
+        )}
 
+        {/* Enhanced Username Input */}
         <div className="form-group">
-          <label htmlFor="username">Tên đăng nhập</label>
+          <label htmlFor="username">
+            <i className="fas fa-user"></i>
+            Tên đăng nhập
+          </label>
           <input
             id="username"
             type="text"
@@ -120,8 +136,12 @@ const Login = () => {
           />
         </div>
 
+        {/* Enhanced Password Input */}
         <div className="form-group password-group">
-          <label htmlFor="password">Mật khẩu</label>
+          <label htmlFor="password">
+            <i className="fas fa-lock"></i>
+            Mật khẩu
+          </label>
           <div className="password-wrapper">
             <input
               id="password"
@@ -139,22 +159,38 @@ const Login = () => {
               className="toggle-password"
               onClick={() => setShowPassword(!showPassword)}
               disabled={loading}
+              title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
             >
-              {showPassword ? '🙈' : '👁️'}
+              <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
             </button>
           </div>
         </div>
 
+        {/* Enhanced Links */}
         <div className="form-links">
-          <Link to="/forgot-password">Quên mật khẩu?</Link>
+          <Link to="/forgot-password" className="forgot-link">
+            <i className="fas fa-question-circle"></i>
+            Quên mật khẩu?
+          </Link>
         </div>
 
+        {/* Enhanced Submit Button */}
         <button 
           type="submit" 
-          className={`form-btn ${loading ? 'loading' : ''}`}
+          className={`form-btn primary ${loading ? 'loading' : ''}`}
           disabled={loading}
         >
-          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          {loading ? (
+            <>
+              <div className="loading-spinner"></div>
+              Đang đăng nhập...
+            </>
+          ) : (
+            <>
+              <i className="fas fa-sign-in-alt"></i>
+              Đăng nhập
+            </>
+          )}
         </button>
       </form>
     </div>

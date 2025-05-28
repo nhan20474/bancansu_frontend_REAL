@@ -52,11 +52,18 @@ html, body {
 }
 
 .form-group label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   color: #374151;
   font-weight: 500;
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
+}
+
+.form-group label i {
+  color: #2563eb;
+  width: 16px;
 }
 
 .form-input {
@@ -100,18 +107,23 @@ html, body {
 .toggle-password {
   position: absolute;
   right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 1.1rem;
   cursor: pointer;
   color: #6b7280;
-  padding: 0.25rem;
+  padding: 0.5rem;
   border-radius: 4px;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.toggle-password:hover {
+.toggle-password:hover:not(:disabled) {
   color: #2563eb;
+  background: #f1f5f9;
 }
 
 .toggle-password:disabled {
@@ -119,102 +131,122 @@ html, body {
   opacity: 0.5;
 }
 
-/* Nút đăng nhập */
-.form-btn {
-  width: 100%;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.875rem 1rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.toggle-password i {
+  font-size: 1rem;
 }
 
-.form-btn:hover:not(:disabled) {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-.form-btn:active {
-  transform: translateY(0);
-}
-
-.form-btn:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Thông báo lỗi */
-.form-error {
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.25rem;
-  border: 1px solid #fecaca;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.form-success {
-  background: #f0fdf4;
-  color: #166534;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.25rem;
-  border: 1px solid #bbf7d0;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-/* Link phụ */
+/* Enhanced Links */
 .form-links {
-  display: flex;
-  justify-content: center;
+  text-align: right;
   margin-bottom: 1.5rem;
 }
 
-.form-links a {
+.forgot-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   color: #2563eb;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.form-links a:hover {
+.forgot-link:hover {
   color: #1d4ed8;
   text-decoration: underline;
 }
 
-/* Loading animation */
+.forgot-link i {
+  font-size: 0.8rem;
+}
+
+/* Enhanced Button */
+.form-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.form-btn.primary {
+  background: #2563eb;
+  color: white;
+}
+
+.form-btn.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.form-btn:disabled {
+  background: #94a3b8;
+  color: white;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Enhanced Loading States */
 .form-btn.loading {
   position: relative;
   color: transparent;
 }
 
-.form-btn.loading::after {
-  content: '';
+.loading-spinner {
   position: absolute;
   width: 16px;
   height: 16px;
-  top: 50%;
-  left: 50%;
-  margin-left: -8px;
-  margin-top: -8px;
   border: 2px solid transparent;
-  border-top: 2px solid #ffffff;
+  border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.form-btn.loading .loading-spinner {
+  color: white;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Thông báo lỗi */
+.form-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-message.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.form-message.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.form-message i {
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 /* Back button styles */
@@ -242,32 +274,196 @@ html, body {
   margin-top: 0.25rem;
 }
 
-/* Responsive design */
+/* Enhanced Form Header */
+.form-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.header-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.header-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+/* User Info Card */
+.user-info-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar i {
+  font-size: 2.5rem;
+  color: #2563eb;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.user-details strong {
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.user-details span {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* Password Strength Indicator */
+.password-strength {
+  margin-top: 0.5rem;
+}
+
+.strength-indicator {
+  width: 100%;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.strength-bar {
+  height: 100%;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.strength-bar.weak {
+  width: 30%;
+  background: #dc2626;
+}
+
+.strength-bar.medium {
+  width: 60%;
+  background: #ea580c;
+}
+
+.strength-bar.good {
+  width: 100%;
+  background: #16a34a;
+}
+
+/* Password Match Indicator */
+.password-match {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.password-match.match {
+  color: #16a34a;
+}
+
+.password-match.no-match {
+  color: #dc2626;
+}
+
+/* Security Tips */
+.security-tips {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.security-tips h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #0369a1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+}
+
+.security-tips h4 i {
+  color: #0284c7;
+}
+
+.security-tips ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.security-tips li {
+  color: #075985;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+  position: relative;
+}
+
+.security-tips li::before {
+  content: '•';
+  color: #0284c7;
+  font-weight: bold;
+  position: absolute;
+  left: -1rem;
+}
+
+/* Enhanced Responsive Design */
 @media (max-width: 768px) {
   .login-container {
     padding: 1rem;
   }
   
   .login-form {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem;
+    max-width: 350px;
   }
   
-  .login-form h2 {
+  .header-icon {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .header-icon i {
+    font-size: 1.25rem;
+  }
+  
+  .form-header h2 {
     font-size: 1.5rem;
   }
 }
 
 @media (max-width: 480px) {
-  .login-form {
-    padding: 1.5rem 1rem;
-    border-radius: 8px;
+  .login-container {
+    padding: 1rem;
   }
   
-  .form-input {
-    padding: 0.75rem 0.875rem;
+  .login-form {
+    padding: 1.25rem;
   }
   
   .form-btn {
     padding: 0.75rem 1rem;
+    font-size: 0.85rem;
   }
 }
