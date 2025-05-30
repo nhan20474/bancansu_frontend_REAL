@@ -282,18 +282,12 @@ function ClassList() {
       ]);
       const users = Array.isArray(usersRes.data) ? usersRes.data : [];
       const allMembers = Array.isArray(allMembersRes.data) ? allMembersRes.data : [];
-      // Lấy tất cả MaNguoiDung đã là thành viên bất kỳ lớp nào (chỉ lấy duy nhất mỗi MaNguoiDung)
-      const memberIdSet = new Set<string>();
-      allMembers.forEach((m: any) => {
-        if (m && m.MaNguoiDung !== undefined && m.MaNguoiDung !== null) {
-          memberIdSet.add(String(m.MaNguoiDung));
-        }
-      });
-      // Chỉ hiện những sinh viên/cán sự chưa là thành viên bất kỳ lớp nào (không bị lặp)
+      // Lấy danh sách MaNguoiDung đã là thành viên của lớp hiện tại
+      const currentClassMembers = members.map((m: any) => String(m.MaNguoiDung));
+      // Chỉ hiện những sinh viên/cán sự chưa là thành viên của lớp hiện tại
       const filteredUsers = users.filter((u: any) => {
         const role = (u.VaiTro || u.role || u.vaitro || u.Role || u.ROLE || '').toString().toLowerCase();
-        return (role === 'cansu' || role === 'sinhvien')
-          && !memberIdSet.has(String(u.MaNguoiDung));
+        return (role === 'cansu' || role === 'sinhvien') && !currentClassMembers.includes(String(u.MaNguoiDung));
       });
       setAddMemberUsers(filteredUsers);
     } catch {
@@ -423,484 +417,444 @@ function ClassList() {
 
   return (
     <div className="class-list-page">
-      <h2>Danh sách lớp học</h2>
-      {/* Thanh tìm kiếm lớp học */}
-      <form
-        onSubmit={handleSearch}
-        style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
-      >
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo tên hoặc mã lớp..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{
-            flex: 1,
-            padding: '0.55rem 0.9rem',
-            borderRadius: 7,
-            border: '1.5px solid #2563eb',
-            fontSize: '1.05rem',
-            background: '#f9fafe'
-          }}
-          disabled={loading || searching}
-        />
-        <button
-          type="submit"
-          className="action-btn"
-          style={{
-            background: '#2563eb',
-            color: '#fff',
-            borderRadius: 8,
-            fontWeight: 600,
-            fontSize: '1rem',
-            padding: '8px 18px',
-            border: 'none'
-          }}
-          disabled={loading || searching}
+      {/* Overlay mờ khi form mở */}
+      {showForm && canEdit && (
+        <div className="class-form-overlay">
+          <form className="class-form" onSubmit={handleSubmit}>
+            <h3 className="class-form-title">
+              {editing ? 'Cập nhật lớp học' : 'Thêm lớp học mới'}
+            </h3>
+            <div className="class-form-group">
+              <input
+                name="MaLopHoc"
+                value={form.MaLopHoc || ''}
+                onChange={handleChange}
+                placeholder="Mã lớp học"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="class-form-group">
+              <input
+                name="TenLop"
+                value={form.TenLop || ''}
+                onChange={handleChange}
+                placeholder="Tên lớp"
+                required
+              />
+            </div>
+            <div className="class-form-group">
+              <input
+                name="ChuyenNganh"
+                value={form.ChuyenNganh || ''}
+                onChange={handleChange}
+                placeholder="Môn học"
+                required
+              />
+            </div>
+            <div className="class-form-group">
+              <input
+                name="KhoaHoc"
+                value={form.KhoaHoc || ''}
+                onChange={handleChange}
+                placeholder="Học kì"
+                required
+              />
+            </div>
+            <div className="class-form-group">
+              <select
+                name="GiaoVien"
+                value={form.GiaoVien !== undefined && form.GiaoVien !== null ? String(form.GiaoVien) : ''}
+                onChange={handleChange}
+                required
+              >
+                <option value="">-- Chọn giáo viên chủ nhiệm --</option>
+                {teachers.length === 0
+                  ? <option value="" disabled>Không có giáo viên</option>
+                  : teachers.map(gv => (
+                      <option key={gv.id} value={String(gv.id)}>
+                        {gv.id} - {gv.name}
+                      </option>
+                    ))
+                }
+              </select>
+            </div>
+            {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
+            <div className="class-form-actions">
+              <button type="submit" className="action-btn">
+                <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu cập nhật" : "Thêm mới"}
+              </button>
+              <button
+                type="button"
+                className="action-btn delete"
+                title="Hủy"
+                onClick={handleCancel}
+              >
+                <i className="fas fa-times"></i> Hủy
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      <div className={`class-list-container ${showForm && canEdit ? 'blurred' : ''}`}>
+        <h2>Danh sách lớp học</h2>
+        {/* Thanh tìm kiếm lớp học */}
+        <form
+          onSubmit={handleSearch}
+          style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
         >
-          <i className="fas fa-search"></i> Tìm kiếm
-        </button>
-        {search && (
-          <button
-            type="button"
-            className="action-btn delete"
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên hoặc mã lớp..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             style={{
-              background: '#e0e7ef',
-              color: '#2563eb',
+              flex: 1,
+              padding: '0.55rem 0.9rem',
+              borderRadius: 7,
+              border: '1.5px solid #2563eb',
+              fontSize: '1.05rem',
+              background: '#f9fafe'
+            }}
+            disabled={loading || searching}
+          />
+          <button
+            type="submit"
+            className="action-btn"
+            style={{
+              background: '#2563eb',
+              color: '#fff',
               borderRadius: 8,
               fontWeight: 600,
               fontSize: '1rem',
-              padding: '8px 12px',
+              padding: '8px 18px',
               border: 'none'
             }}
-            onClick={() => {
-              setSearch('');
-              fetchData();
-            }}
             disabled={loading || searching}
-            title="Xóa tìm kiếm"
           >
-            <i className="fas fa-times"></i>
+            <i className="fas fa-search"></i> Tìm kiếm
           </button>
-        )}
-      </form>
-      {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
-      {showForm && canEdit && (
-        <form className="class-form" onSubmit={handleSubmit}>
-          <h3 className="class-form-title">
-            {editing ? 'Cập nhật lớp học' : 'Thêm lớp học mới'}
-          </h3>
-          <div className="class-form-group">
-            <input
-              name="MaLopHoc"
-              value={form.MaLopHoc || ''}
-              onChange={handleChange}
-              placeholder="Mã lớp học"
-              required
-              autoFocus
-            />
-          </div>
-          <div className="class-form-group">
-            <input
-              name="TenLop"
-              value={form.TenLop || ''}
-              onChange={handleChange}
-              placeholder="Tên lớp"
-              required
-            />
-          </div>
-          <div className="class-form-group">
-            <input
-              name="ChuyenNganh"
-              value={form.ChuyenNganh || ''}
-              onChange={handleChange}
-              placeholder="Môn học"
-              required
-            />
-          </div>
-          <div className="class-form-group">
-            <input
-              name="KhoaHoc"
-              value={form.KhoaHoc || ''}
-              onChange={handleChange}
-              placeholder="Học kì"
-              required
-            />
-          </div>
-          <div className="class-form-group">
-            <select
-              name="GiaoVien"
-              value={form.GiaoVien !== undefined && form.GiaoVien !== null ? String(form.GiaoVien) : ''}
-              onChange={handleChange}
-              required
-            >
-              <option value="">-- Chọn giáo viên chủ nhiệm --</option>
-              {teachers.length === 0
-                ? <option value="" disabled>Không có giáo viên</option>
-                : teachers.map(gv => (
-                    <option key={gv.id} value={String(gv.id)}>
-                      {gv.id} - {gv.name}
-                    </option>
-                  ))
-              }
-            </select>
-          </div>
-          {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
-          <div className="class-form-actions">
-            <button type="submit" className="action-btn">
-              <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu cập nhật" : "Thêm mới"}
-            </button>
+          {search && (
             <button
               type="button"
               className="action-btn delete"
-              title="Hủy"
-              onClick={handleCancel}
-            >
-              <i className="fas fa-times"></i> Hủy
-            </button>
-          </div>
-        </form>
-      )}
-      {canEdit && (
-        <button
-          className="action-btn"
-          title="Thêm mới"
-          onClick={handleAddNew}
-          style={{
-            marginBottom: 18,
-            background: "#2563eb",
-            color: "#fff",
-            borderRadius: 8,
-            fontWeight: 600,
-            fontSize: "1rem",
-            padding: "8px 18px",
-            boxShadow: "0 2px 8px #2563eb22",
-            border: "none"
-          }}
-        >
-          <i className="fas fa-plus"></i> Thêm lớp mới
-        </button>
-      )}
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 14,
-          boxShadow: "0 4px 24px #2563eb18",
-          overflow: "hidden",
-          marginTop: 18,
-          marginBottom: 32,
-          border: "1.5px solid #e0e7ef"
-        }}
-      >
-        <table className="class-table" style={{ margin: 0 }}>
-          <thead>
-            <tr>
-              <th style={{ width: 110 }}>Mã lớp học</th>
-              <th style={{ width: 180 }}>Tên lớp</th>
-              <th style={{ width: 160 }}>Môn học </th>
-              <th style={{ width: 110 }}>Học kì</th>
-              <th style={{ width: 180 }}>Giáo viên chủ nhiệm</th>
-              <th style={{ width: 160, textAlign: "center" }}>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Hiển thị trực tiếp danh sách lớp trả về từ API */}
-            {classes.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{textAlign:'center', color:'#888'}}>Không có dữ liệu lớp học</td>
-              </tr>
-            ) : (
-              classes.map((item, idx) => (
-                <tr
-                  key={item.MaLop}
-                  style={{
-                    background: idx % 2 === 0 ? "#f9fafe" : "#fff",
-                    transition: "background 0.18s"
-                  }}
-                >
-                  <td style={{ fontWeight: 600, color: "#2563eb" }}>{item.MaLopHoc}</td>
-                  <td style={{ fontWeight: 500 }}>{item.TenLop}</td>
-                  <td>{item.ChuyenNganh}</td>
-                  <td>{item.KhoaHoc}</td>
-                  <td>
-                    {('TenGiaoVien' in item && item.TenGiaoVien)
-                      ? item.TenGiaoVien
-                      : teachers.find(gv => String(gv.id) === String(item.GiaoVien))?.name || '-'}
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    {canEdit && (
-                      <>
-                        <button
-                          className="action-btn"
-                          title="Sửa"
-                          onClick={() => handleEdit(item)}
-                          style={{
-                            marginRight: 6,
-                            background: "#e0e7ef",
-                            color: "#2563eb",
-                            borderRadius: 6,
-                            border: "none"
-                          }}
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          className="action-btn delete"
-                          title="Xóa"
-                          onClick={() => handleDelete(item.MaLop)}
-                          style={{
-                            marginRight: 6,
-                            background: "#fdeaea",
-                            color: "#d32f2f",
-                            borderRadius: 6,
-                            border: "none"
-                          }}
-                        >
-                          <i className="fas fa-trash-alt"></i>
-                        </button>
-                      </>
-                    )}
-                    <button
-                      className="action-btn"
-                      title="Xem thành viên"
-                      style={{
-                        marginLeft: 2,
-                        background: "#f1f5f9",
-                        color: "#2563eb",
-                        borderRadius: 6,
-                        border: "none"
-                      }}
-                      onClick={() => handleViewMembers(item)}
-                    >
-                      <i className="fas fa-users"></i>
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      {/* Modal xem thành viên lớp */}
-      {showMembersModal && (
-        <div
-          style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.2)', zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}
-          onClick={() => {
-            setShowMembersModal(false);
-            setShowAddMemberForm(false);
-            setAddMemberUserId('');
-            setAddMemberError(null);
-          }}
-        >
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: 18,
-              boxShadow: '0 12px 48px #8885',
-              padding: 40,
-              minWidth: 520,
-              maxWidth: 900,
-              width: '90vw',
-              position: 'relative',
-              border: '2px solid #e0e7ef'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              className="action-btn delete"
               style={{
-                position: 'absolute', top: 18, right: 18,
-                fontSize: 22, background: '#fdeaea', color: '#d32f2f'
+                background: '#e0e7ef',
+                color: '#2563eb',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: '1rem',
+                padding: '8px 12px',
+                border: 'none'
               }}
               onClick={() => {
-                setShowMembersModal(false);
-                setShowAddMemberForm(false);
-                setAddMemberUserId('');
-                setAddMemberError(null);
+                setSearch('');
+                fetchData();
               }}
-              title="Đóng"
+              disabled={loading || searching}
+              title="Xóa tìm kiếm"
             >
               <i className="fas fa-times"></i>
             </button>
-            <h3 style={{
-              marginBottom: 22,
-              color: '#2563eb',
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              textAlign: 'center'
-            }}>
-              Thành viên lớp: {selectedClass?.TenLop}
-            </h3>
-            <div style={{ marginBottom: 16, textAlign: 'right' }}>
-              {canManageMembers && (
-                <button
-                  className="action-btn"
+          )}
+        </form>
+        {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
+        {canEdit && (
+          <button
+            className="action-btn add-class-btn"
+            title="Thêm mới"
+            onClick={handleAddNew}
+          >
+            <i className="fas fa-plus"></i> Thêm lớp mới
+          </button>
+        )}
+        <div className="class-table-wrapper">
+          <table className="class-table">
+            <thead>
+              <tr>
+                <th style={{ width: 110 }}>Mã lớp học</th>
+                <th style={{ width: 180 }}>Tên lớp</th>
+                <th style={{ width: 160 }}>Môn học </th>
+                <th style={{ width: 110 }}>Học kì</th>
+                <th style={{ width: 180 }}>Giáo viên chủ nhiệm</th>
+                <th style={{ width: 160, textAlign: "center" }}>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Hiển thị trực tiếp danh sách lớp trả về từ API */}
+              {classes.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{textAlign:'center', color:'#888'}}>Không có dữ liệu lớp học</td>
+                </tr>
+              ) : (
+                classes.map((item, idx) => (
+                  <tr
+                    key={item.MaLop}
+                    className={idx % 2 === 0 ? "even-row" : "odd-row"}
+                  >
+                    <td className="class-code">{item.MaLopHoc}</td>
+                    <td className="class-name">{item.TenLop}</td>
+                    <td>{item.ChuyenNganh}</td>
+                    <td>{item.KhoaHoc}</td>
+                    <td>
+                      {('TenGiaoVien' in item && item.TenGiaoVien)
+                        ? item.TenGiaoVien
+                        : teachers.find(gv => String(gv.id) === String(item.GiaoVien))?.name || '-'}
+                    </td>
+                    <td className="action-cell">
+                      {canEdit && (
+                        <>
+                          <button
+                            className="action-btn edit-btn"
+                            title="Sửa"
+                            onClick={() => handleEdit(item)}
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button
+                            className="action-btn delete delete-btn"
+                            title="Xóa"
+                            onClick={() => handleDelete(item.MaLop)}
+                          >
+                            <i className="fas fa-trash-alt"></i>
+                          </button>
+                        </>
+                      )}
+                      <button
+                        className="action-btn view-members-btn"
+                        title="Xem thành viên"
+                        onClick={() => handleViewMembers(item)}
+                      >
+                        <i className="fas fa-users"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+             ) }
+            </tbody>
+          </table>
+        </div>
+        {/* Modal xem thành viên lớp */}
+        {showMembersModal && (
+          <div
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.2)', zIndex: 1000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onClick={() => {
+              setShowMembersModal(false);
+              setShowAddMemberForm(false);
+              setAddMemberUserId('');
+              setAddMemberError(null);
+            }}
+          >
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 18,
+                boxShadow: '0 12px 48px #8885',
+                padding: 40,
+                minWidth: 520,
+                maxWidth: 900,
+                width: '90vw',
+                position: 'relative',
+                border: '2px solid #e0e7ef'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                className="action-btn delete"
+                style={{
+                  position: 'absolute', top: 18, right: 18,
+                  fontSize: 22, background: '#fdeaea', color: '#d32f2f'
+                }}
+                onClick={() => {
+                  setShowMembersModal(false);
+                  setShowAddMemberForm(false);
+                  setAddMemberUserId('');
+                  setAddMemberError(null);
+                }}
+                title="Đóng"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+              <h3 style={{
+                marginBottom: 22,
+                color: '#2563eb',
+                fontWeight: 700,
+                fontSize: '1.25rem',
+                textAlign: 'center'
+              }}>
+                Thành viên lớp: {selectedClass?.TenLop}
+              </h3>
+              <div style={{ marginBottom: 16, textAlign: 'right' }}>
+                {canManageMembers && (
+                  <button
+                    className="action-btn"
+                    style={{
+                      background: "#2563eb",
+                      color: "#fff",
+                      borderRadius: 6,
+                      border: "none",
+                      padding: "6px 14px",
+                      fontWeight: 600,
+                      fontSize: "1rem"
+                    }}
+                    onClick={() => handleAddMember(selectedClass!.MaLop)}
+                  >
+                    <i className="fas fa-user-plus"></i> Thêm thành viên
+                  </button>
+                )}
+              </div>
+              {/* Form thêm thành viên riêng */}
+              {showAddMemberForm && canManageMembers && (
+                <form
+                  onSubmit={handleAddMemberSubmit}
                   style={{
-                    background: "#2563eb",
-                    color: "#fff",
-                    borderRadius: 6,
-                    border: "none",
-                    padding: "6px 14px",
-                    fontWeight: 600,
-                    fontSize: "1rem"
+                    background: '#f9fafe',
+                    border: '1.5px solid #e0e7ef',
+                    borderRadius: 10,
+                    padding: 18,
+                    marginBottom: 18,
+                    maxWidth: 400,
+                    marginLeft: 'auto',
+                    marginRight: 'auto'
                   }}
-                  onClick={() => handleAddMember(selectedClass!.MaLop)}
                 >
-                  <i className="fas fa-user-plus"></i> Thêm thành viên
-                </button>
+                  <div style={{ marginBottom: 10, fontWeight: 600, color: '#2563eb' }}>
+                    Thêm thành viên vào lớp
+                  </div>
+                  <select
+                    value={addMemberUserId}
+                    onChange={e => setAddMemberUserId(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.9rem',
+                      borderRadius: 7,
+                      border: '1px solid #cbd5e1',
+                      fontSize: '1.05rem',
+                      marginBottom: 10
+                    }}
+                    required
+                  >
+                    <option value="">-- Chọn cán sự hoặc sinh viên --</option>
+                    {addMemberUsers.map(u => (
+                      <option key={u.MaNguoiDung} value={u.MaNguoiDung}>
+                        {u.HoTen || u.email || u.MaNguoiDung}
+                        {u.MaSoSV ? ` (${u.MaSoSV})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {addMemberError && (
+                    <div style={{ color: '#d32f2f', marginBottom: 8, fontSize: 15 }}>
+                      {addMemberError}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      className="action-btn"
+                      style={{
+                        background: '#e0e7ef',
+                        color: '#2563eb',
+                        borderRadius: 6,
+                        border: 'none',
+                        padding: '6px 14px',
+                        fontWeight: 600
+                      }}
+                      onClick={() => {
+                        setShowAddMemberForm(false);
+                        setAddMemberUserId('');
+                        setAddMemberError(null);
+                      }}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="action-btn"
+                      style={{
+                        background: '#2563eb',
+                        color: '#fff',
+                        borderRadius: 6,
+                        border: 'none',
+                        padding: '6px 14px',
+                        fontWeight: 600
+                      }}
+                    >
+                      Thêm
+                    </button>
+                  </div>
+                </form>
+              )}
+              {loadingMembers ? (
+                <div style={{ color: '#888', textAlign: 'center', padding: 32, fontSize: 18 }}>Đang tải thành viên...</div>
+              ) : (!members || members.length === 0) ? (
+                <div style={{ color: '#888', textAlign: 'center', padding: 32, fontSize: 18 }}>Không có thành viên.</div>
+              ) : (
+                <div style={{
+                  maxHeight: 480,
+                  overflowY: 'auto',
+                  borderRadius: 10,
+                  border: '1.5px solid #e0e7ef',
+                  background: '#f9fafe',
+                  boxShadow: '0 2px 12px #e0e7ef55',
+                  marginBottom: 0
+                }}>
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    background: 'transparent',
+                    fontSize: 17
+                  }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left', padding: 10 }}>Mã SV</th>
+                        <th style={{ textAlign: 'left', padding: 10 }}>Họ tên</th>
+                        <th style={{ textAlign: 'left', padding: 10 }}>Vai trò</th>
+                        <th style={{ textAlign: 'left', padding: 10 }}>Email</th>
+                        <th style={{ textAlign: 'left', padding: 10 }}>SĐT</th>
+                        <th style={{ textAlign: 'center', padding: 10 }}>Xóa</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {members.map((m: any) => (
+                        <tr key={m.MaNguoiDung}>
+                          <td style={{ padding: 10 }}>{m.MaSoSV || m.MaNguoiDung}</td>
+                          <td style={{ padding: 10 }}>{m.HoTen || ''}</td>
+                          <td style={{ padding: 10 }}>{m.VaiTro || ''}</td>
+                          <td style={{ padding: 10 }}>{m.Email || ''}</td>
+                          <td style={{ padding: 10 }}>{m.SoDienThoai || ''}</td>
+                          <td style={{ padding: 10, textAlign: 'center' }}>
+                            {canManageMembers && (
+                              <button
+                                className="action-btn delete"
+                                title="Xóa thành viên"
+                                style={{
+                                  background: "#fdeaea",
+                                  color: "#d32f2f",
+                                  borderRadius: 6,
+                                  border: "none",
+                                  padding: "6px 10px",
+                                  fontSize: "1.1rem"
+                                }}
+                                onClick={() => handleRemoveMember(selectedClass!.MaLop, m.MaNguoiDung)}
+                              >
+                                <i className="fas fa-user-minus"></i>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-            {/* Form thêm thành viên riêng */}
-            {showAddMemberForm && canManageMembers && (
-              <form
-                onSubmit={handleAddMemberSubmit}
-                style={{
-                  background: '#f9fafe',
-                  border: '1.5px solid #e0e7ef',
-                  borderRadius: 10,
-                  padding: 18,
-                  marginBottom: 18,
-                  maxWidth: 400,
-                  marginLeft: 'auto',
-                  marginRight: 'auto'
-                }}
-              >
-                <div style={{ marginBottom: 10, fontWeight: 600, color: '#2563eb' }}>
-                  Thêm thành viên vào lớp
-                </div>
-                <select
-                  value={addMemberUserId}
-                  onChange={e => setAddMemberUserId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem 0.9rem',
-                    borderRadius: 7,
-                    border: '1px solid #cbd5e1',
-                    fontSize: '1.05rem',
-                    marginBottom: 10
-                  }}
-                  required
-                >
-                  <option value="">-- Chọn cán sự hoặc sinh viên --</option>
-                  {addMemberUsers.map(u => (
-                    <option key={u.MaNguoiDung} value={u.MaNguoiDung}>
-                      {u.HoTen || u.email || u.MaNguoiDung}
-                      {u.MaSoSV ? ` (${u.MaSoSV})` : ''}
-                    </option>
-                  ))}
-                </select>
-                {addMemberError && (
-                  <div style={{ color: '#d32f2f', marginBottom: 8, fontSize: 15 }}>
-                    {addMemberError}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
-                    className="action-btn"
-                    style={{
-                      background: '#e0e7ef',
-                      color: '#2563eb',
-                      borderRadius: 6,
-                      border: 'none',
-                      padding: '6px 14px',
-                      fontWeight: 600
-                    }}
-                    onClick={() => {
-                      setShowAddMemberForm(false);
-                      setAddMemberUserId('');
-                      setAddMemberError(null);
-                    }}
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    className="action-btn"
-                    style={{
-                      background: '#2563eb',
-                      color: '#fff',
-                      borderRadius: 6,
-                      border: 'none',
-                      padding: '6px 14px',
-                      fontWeight: 600
-                    }}
-                  >
-                    Thêm
-                  </button>
-                </div>
-              </form>
-            )}
-            {loadingMembers ? (
-              <div style={{ color: '#888', textAlign: 'center', padding: 32, fontSize: 18 }}>Đang tải thành viên...</div>
-            ) : (!members || members.length === 0) ? (
-              <div style={{ color: '#888', textAlign: 'center', padding: 32, fontSize: 18 }}>Không có thành viên.</div>
-            ) : (
-              <div style={{
-                maxHeight: 480,
-                overflowY: 'auto',
-                borderRadius: 10,
-                border: '1.5px solid #e0e7ef',
-                background: '#f9fafe',
-                boxShadow: '0 2px 12px #e0e7ef55',
-                marginBottom: 0
-              }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  background: 'transparent',
-                  fontSize: 17
-                }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: 10 }}>Mã SV</th>
-                      <th style={{ textAlign: 'left', padding: 10 }}>Họ tên</th>
-                      <th style={{ textAlign: 'left', padding: 10 }}>Vai trò</th>
-                      <th style={{ textAlign: 'left', padding: 10 }}>Email</th>
-                      <th style={{ textAlign: 'left', padding: 10 }}>SĐT</th>
-                      <th style={{ textAlign: 'center', padding: 10 }}>Xóa</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {members.map((m: any) => (
-                      <tr key={m.MaNguoiDung}>
-                        <td style={{ padding: 10 }}>{m.MaSoSV || m.MaNguoiDung}</td>
-                        <td style={{ padding: 10 }}>{m.HoTen || ''}</td>
-                        <td style={{ padding: 10 }}>{m.VaiTro || ''}</td>
-                        <td style={{ padding: 10 }}>{m.Email || ''}</td>
-                        <td style={{ padding: 10 }}>{m.SoDienThoai || ''}</td>
-                        <td style={{ padding: 10, textAlign: 'center' }}>
-                          {canManageMembers && (
-                            <button
-                              className="action-btn delete"
-                              title="Xóa thành viên"
-                              style={{
-                                background: "#fdeaea",
-                                color: "#d32f2f",
-                                borderRadius: 6,
-                                border: "none",
-                                padding: "6px 10px",
-                                fontSize: "1.1rem"
-                              }}
-                              onClick={() => handleRemoveMember(selectedClass!.MaLop, m.MaNguoiDung)}
-                            >
-                              <i className="fas fa-user-minus"></i>
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

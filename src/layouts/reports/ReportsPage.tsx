@@ -108,7 +108,9 @@ const ReportsPage: React.FC = () => {
   }
 
   return (
-    <div className="reports-container">
+    <div className="reports-container" style={{ position: 'relative' }}>
+      {/* Overlay mờ khi form mở */}
+      {/* Không có form thêm/sửa ở trang này, KHÔNG cần sửa gì ở đây */}
       <div className="reports-form" style={{ maxWidth: 700 }}>
         <h2 style={{ textAlign: 'center', marginBottom: 24 }}>📊 Thống kê & Báo cáo lớp học</h2>
         {loading && <div className="form-success">Đang tải dữ liệu...</div>}

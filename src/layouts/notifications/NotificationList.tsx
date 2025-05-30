@@ -284,236 +284,244 @@ const NotificationList: React.FC = () => {
   );
 
   return (
-    <div className="notification-list-page notification-feed-page">
-      <div className="notification-feed-header">
-        <h1>
-          <i className="fas fa-bell" style={{color:'#2563eb', marginRight:8}}></i>
-          Bảng tin thông báo
-        </h1>
-        <p>
-          Cập nhật các thông báo mới nhất từ hệ thống, lớp học, cán sự. Nhấn vào từng thông báo để xem chi tiết hoặc mở liên kết liên quan.
-        </p>
-        {/* Thanh tìm kiếm thông báo */}
-        <form
-          onSubmit={handleSearch}
-          style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
-        >
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên người gửi hoặc tiêu đề..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              flex: 1,
-              padding: '0.55rem 0.9rem',
-              borderRadius: 7,
-              border: '1.5px solid #2563eb',
-              fontSize: '1.05rem',
-              background: '#f9fafe'
-            }}
-            disabled={loading || searching}
-          />
-          <button
-            type="submit"
-            className="action-btn"
-            style={{
-              background: '#2563eb',
-              color: '#fff',
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: '1rem',
-              padding: '8px 18px',
-              border: 'none'
-            }}
-            disabled={loading || searching}
-          >
-            <i className="fas fa-search"></i> Tìm kiếm
-          </button>
-          {search && (
-            <button
-              type="button"
-              className="action-btn delete"
-              style={{
-                background: '#e0e7ef',
-                color: '#2563eb',
-                borderRadius: 8,
-                fontWeight: 600,
-                fontSize: '1rem',
-                padding: '8px 12px',
-                border: 'none'
-              }}
-              onClick={() => {
-                setSearch('');
-                fetchData();
-              }}
-              disabled={loading || searching}
-              title="Xóa tìm kiếm"
-            >
-              <i className="fas fa-times"></i>
-            </button>
-          )}
-        </form>
-        {canEdit && (
-          <button className="feed-add-btn" title="Thêm thông báo mới" onClick={() => { setShowForm(true); setEditing(null); setForm({ ...emptyNotification }); setImagePreview(undefined); }}>
-            <i className="fas fa-plus"></i> Đăng thông báo mới
-          </button>
-        )}
-      </div>
+    <div className="notification-list-page">
       {showForm && canEdit && (
-        <form className="notification-form" onSubmit={handleFormSubmit} encType="multipart/form-data" style={{margin:'0 auto 24px auto', maxWidth:420}}>
-          <h3 style={{textAlign:'center', color:'#2563eb', marginBottom:10}}>{editing ? 'Cập nhật thông báo' : 'Đăng thông báo mới'}</h3>
-          <input
-            name="TieuDe"
-            value={form.TieuDe || ''}
-            onChange={handleChange}
-            placeholder="Nhập tiêu đề thông báo"
-            required
-          />
-          <textarea
-            name="NoiDung"
-            value={form.NoiDung || ''}
-            onChange={handleChange}
-            placeholder="Nhập nội dung thông báo"
-            rows={4}
-            required
-          />
-          <select
-            name="MaLop"
-            value={form.MaLop || ''}
-            onChange={handleChange}
-            required
+        <div className="notification-form-overlay">
+          <form
+            className="notification-form"
+            onSubmit={handleFormSubmit}
+            encType="multipart/form-data"
           >
-            <option value="">--Chọn lớp--</option>
-            {classes.map(lop => (
-              <option key={lop.MaLop} value={lop.MaLop}>
-                {lop.TenLop}
-              </option>
-            ))}
-          </select>
-          <input
-            name="link"
-            value={form.link || ''}
-            onChange={handleChange}
-            placeholder="Đường dẫn liên quan (nếu có)"
-            type="url"
-            style={{ marginBottom: 12 }}
-          />
-          <input
-            type="file"
-            name="AnhDinhKem"
-            accept="image/*"
-            onChange={handleImageChange}
-            ref={fileInputRef}
-            title="Chọn ảnh đính kèm"
-          />
-          {(imagePreview || (editing && typeof form.AnhDinhKem === 'string' && form.AnhDinhKem)) && (
-            <div style={{ margin: '8px 0', textAlign: 'center' }}>
-              <img
-                src={imagePreview || (typeof form.AnhDinhKem === 'string' && form.AnhDinhKem.startsWith('http')
-                  ? form.AnhDinhKem
-                  : getImageUrl(form.AnhDinhKem as string))}
-                alt="Ảnh đính kèm"
-                style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, border: '1px solid #eee', objectFit: 'cover' }}
-                onError={e => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-              <div style={{ fontSize: 13, color: '#888' }}>Ảnh đính kèm hiện tại</div>
-            </div>
-          )}
-          <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:8}}>
-            <button type="submit" className="action-btn" title={editing ? "Lưu thay đổi" : "Thêm thông báo"}>
-              <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu" : "Thêm mới"}
-            </button>
-            {editing && (
+            <h3 style={{ textAlign: 'center', color: '#2563eb', marginBottom: 10 }}>
+              {editing ? 'Cập nhật thông báo' : 'Đăng thông báo mới'}
+            </h3>
+            <input
+              name="TieuDe"
+              value={form.TieuDe || ''}
+              onChange={handleChange}
+              placeholder="Nhập tiêu đề thông báo"
+              required
+            />
+            <textarea
+              name="NoiDung"
+              value={form.NoiDung || ''}
+              onChange={handleChange}
+              placeholder="Nhập nội dung thông báo"
+              rows={4}
+              required
+            />
+            <select
+              name="MaLop"
+              value={form.MaLop || ''}
+              onChange={handleChange}
+              required
+            >
+              <option value="">--Chọn lớp--</option>
+              {classes.map(lop => (
+                <option key={lop.MaLop} value={lop.MaLop}>
+                  {lop.TenLop}
+                </option>
+              ))}
+            </select>
+            <input
+              name="link"
+              value={form.link || ''}
+              onChange={handleChange}
+              placeholder="Đường dẫn liên quan (nếu có)"
+              type="url"
+              style={{ marginBottom: 12 }}
+            />
+            <input
+              type="file"
+              name="AnhDinhKem"
+              accept="image/*"
+              onChange={handleImageChange}
+              ref={fileInputRef}
+              title="Chọn ảnh đính kèm"
+            />
+            {(imagePreview || (editing && typeof form.AnhDinhKem === 'string' && form.AnhDinhKem)) && (
+              <div style={{ margin: '8px 0', textAlign: 'center' }}>
+                <img
+                  src={imagePreview || (typeof form.AnhDinhKem === 'string' && form.AnhDinhKem.startsWith('http')
+                    ? form.AnhDinhKem
+                    : getImageUrl(form.AnhDinhKem as string))}
+                  alt="Ảnh đính kèm"
+                  style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, border: '1px solid #eee', objectFit: 'cover' }}
+                  onError={e => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <div style={{ fontSize: 13, color: '#888' }}>Ảnh đính kèm hiện tại</div>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
+              <button type="submit" className="action-btn" title={editing ? "Lưu thay đổi" : "Thêm thông báo"}>
+                <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu" : "Thêm mới"}
+              </button>
               <button
                 type="button"
                 className="action-btn delete"
-                title="Hủy chỉnh sửa"
+                title="Hủy"
                 onClick={handleCancel}
               >
                 <i className="fas fa-times"></i> Hủy
               </button>
-            )}
-          </div>
-        </form>
+            </div>
+          </form>
+        </div>
       )}
-      <div className="notification-feed-list">
-        {sortedNotifications.length === 0 && (
-          <div className="form-error" style={{margin:'0 auto', maxWidth:400, textAlign:'center'}}>Không có thông báo nào.</div>
-        )}
-        {sortedNotifications.map(item => (
-          <div className="notification-feed-card" key={item.MaThongBao}>
-            <div className="feed-card-header">
-              <div className="feed-avatar">
-                <i className="fas fa-user-circle"></i>
+      <div className={`notification-feed-container ${showForm && canEdit ? 'blurred' : ''}`}>
+        <div className="notification-feed-header">
+          <h1>
+            <i className="fas fa-bell" style={{color:'#2563eb', marginRight:8}}></i>
+            Bảng tin thông báo
+          </h1>
+          <p>
+            Cập nhật các thông báo mới nhất từ hệ thống, lớp học, cán sự. Nhấn vào từng thông báo để xem chi tiết hoặc mở liên kết liên quan.
+          </p>
+          {/* Thanh tìm kiếm thông báo */}
+          <form
+            onSubmit={handleSearch}
+            style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
+          >
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên người gửi hoặc tiêu đề..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '0.55rem 0.9rem',
+                borderRadius: 7,
+                border: '1.5px solid #2563eb',
+                fontSize: '1.05rem',
+                background: '#f9fafe'
+              }}
+              disabled={loading || searching}
+            />
+            <button
+              type="submit"
+              className="action-btn"
+              style={{
+                background: '#2563eb',
+                color: '#fff',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: '1rem',
+                padding: '8px 18px',
+                border: 'none'
+              }}
+              disabled={loading || searching}
+            >
+              <i className="fas fa-search"></i> Tìm kiếm
+            </button>
+            {search && (
+              <button
+                type="button"
+                className="action-btn delete"
+                style={{
+                  background: '#e0e7ef',
+                  color: '#2563eb',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  padding: '8px 12px',
+                  border: 'none'
+                }}
+                onClick={() => {
+                  setSearch('');
+                  fetchData();
+                }}
+                disabled={loading || searching}
+                title="Xóa tìm kiếm"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            )}
+          </form>
+          {canEdit && (
+            <button className="feed-add-btn" title="Thêm thông báo mới" onClick={() => { setShowForm(true); setEditing(null); setForm({ ...emptyNotification }); setImagePreview(undefined); }}>
+              <i className="fas fa-plus"></i> Đăng thông báo mới
+            </button>
+          )}
+        </div>
+        <div className="notification-feed-list" style={showForm && canEdit ? { filter: 'blur(2px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
+          {sortedNotifications.length === 0 && (
+            <div className="form-error" style={{margin:'0 auto', maxWidth:400, textAlign:'center'}}>Không có thông báo nào.</div>
+          )}
+          {sortedNotifications.map(item => (
+            <div className="notification-feed-card" key={item.MaThongBao}>
+              <div className="feed-card-header">
+                <div className="feed-avatar">
+                  <i className="fas fa-user-circle"></i>
+                </div>
+                <div className="feed-meta">
+                  <span className="feed-sender">{item.TenNguoiGui}</span>
+                  <span className="feed-time">{item.ThoiGianGui ? new Date(item.ThoiGianGui).toLocaleString('vi-VN') : ''}</span>
+                </div>
+                <div className="feed-actions">
+                  {canEdit && (
+                    <>
+                      <button
+                        className="action-btn"
+                        title="Chỉnh sửa"
+                        onClick={() => handleEdit(item)}
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        className="action-btn delete"
+                        title="Xóa"
+                        onClick={() => handleDelete(item.MaThongBao)}
+                      >
+                        <i className="fas fa-trash-alt"></i>
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="feed-meta">
-                <span className="feed-sender">{item.TenNguoiGui}</span>
-                <span className="feed-time">{item.ThoiGianGui ? new Date(item.ThoiGianGui).toLocaleString('vi-VN') : ''}</span>
-              </div>
-              <div className="feed-actions">
-                {canEdit && (
-                  <>
-                    <button
-                      className="action-btn"
-                      title="Chỉnh sửa"
-                      onClick={() => handleEdit(item)}
+              <div className="feed-card-body">
+                <div className="feed-title" dangerouslySetInnerHTML={{ __html: item.TieuDe }} />
+                <div className="feed-content" dangerouslySetInnerHTML={{ __html: item.NoiDung }} />
+                {item.link && (
+                  <div className="feed-link">
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <i className="fas fa-edit"></i>
-                    </button>
-                    <button
-                      className="action-btn delete"
-                      title="Xóa"
-                      onClick={() => handleDelete(item.MaThongBao)}
+                      {/* Đổi biểu tượng thành chữ "Tham gia" */}
+                      Tham gia
+                    </a>
+                  </div>
+                )}
+                {item.AnhDinhKemUrl && (
+                  <div className="feed-image-wrap">
+                    <img
+                      src={item.AnhDinhKemUrl}
+                      alt="Ảnh đính kèm"
+                      className="feed-image"
+                      onError={e => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+                {item.TepDinhKem && (
+                  <div className="feed-link">
+                    <a
+                      href={item.TepDinhKem}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <i className="fas fa-trash-alt"></i>
-                    </button>
-                  </>
+                      <i className="fas fa-paperclip"></i> {item.TepDinhKem}
+                    </a>
+                  </div>
                 )}
               </div>
             </div>
-            <div className="feed-card-body">
-              <div className="feed-title" dangerouslySetInnerHTML={{ __html: item.TieuDe }} />
-              <div className="feed-content" dangerouslySetInnerHTML={{ __html: item.NoiDung }} />
-              {item.link && (
-                <div className="feed-link">
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {/* Đổi biểu tượng thành chữ "Tham gia" */}
-                    Tham gia
-                  </a>
-                </div>
-              )}
-              {item.AnhDinhKemUrl && (
-                <div className="feed-image-wrap">
-                  <img
-                    src={item.AnhDinhKemUrl}
-                    alt="Ảnh đính kèm"
-                    className="feed-image"
-                    onError={e => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-              {item.TepDinhKem && (
-                <div className="feed-link">
-                  <a
-                    href={item.TepDinhKem}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <i className="fas fa-paperclip"></i> {item.TepDinhKem}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

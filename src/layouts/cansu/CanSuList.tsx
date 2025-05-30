@@ -339,8 +339,7 @@ const CanSuList: React.FC = () => {
           .filter(cs => cs.MaNguoiDung === userId)
           .map(cs => cs.MaLop);
         if (lopIdsFromCanSu.length > 0) {
-          // Không setState ở đây vì userLopIds không phải state, chỉ log để debug
-          // console.log('Cập nhật userLopIds cho sinh viên/cán sự:', lopIdsFromCanSu);
+          
         }
       }
     }
@@ -360,248 +359,280 @@ const CanSuList: React.FC = () => {
   if (error) return <div className="cansu-list-page" style={{color:'red'}}>{error}</div>;
 
   return (
-    <div className="cansu-list-page">
-      <h2>Danh sách cán sự</h2>
-      {/* Thanh tìm kiếm cán sự */}
-      <form
-        onSubmit={handleSearch}
-        style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
-      >
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo tên cán sự hoặc tên lớp..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
+    <div className="cansu-list-page" style={{ position: 'relative' }}>
+      {/* Overlay mờ khi form mở */}
+      {showForm && canEdit && (
+        <div
           style={{
-            flex: 1,
-            padding: '0.55rem 0.9rem',
-            borderRadius: 7,
-            border: '1.5px solid #2563eb',
-            fontSize: '1.05rem',
-            background: '#f9fafe'
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.18)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
-          disabled={loading || searching}
-        />
-        <button
-          type="submit"
-          className="action-btn"
-          style={{
-            background: '#2563eb',
-            color: '#fff',
-            borderRadius: 8,
-            fontWeight: 600,
-            fontSize: '1rem',
-            padding: '8px 18px',
-            border: 'none'
-          }}
-          disabled={loading || searching}
         >
-          <i className="fas fa-search"></i> Tìm kiếm
-        </button>
-        {search && (
-          <button
-            type="button"
-            className="action-btn delete"
+          <form
+            className="cansu-form"
+            onSubmit={handleSubmit}
             style={{
-              background: '#e0e7ef',
-              color: '#2563eb',
+              zIndex: 1001,
+              minWidth: 340,
+              maxWidth: 420,
+              width: '96vw',
+              background: '#fff',
+              borderRadius: 12,
+              boxShadow: '0 8px 32px #2563eb33',
+              padding: 28,
+              position: 'relative'
+            }}
+          >
+            <h3 className="cansu-form-title">
+              {editing ? 'Cập nhật cán sự' : 'Thêm cán sự mới'}
+            </h3>
+            <div className="cansu-form-group">
+              <select
+                name="MaLop"
+                value={form.MaLop || ''}
+                onChange={handleChange}
+                required
+                disabled={!!editing || classes.length === 0}
+              >
+                <option value="">--Chọn lớp--</option>
+                {classes.map((lop: any) => (
+                  <option key={lop.MaLop} value={lop.MaLop}>
+                    {lop.TenLop}
+                  </option>
+                ))}
+              </select>
+              {classes.length === 0 && (
+                <div className="form-error" style={{ fontSize: 13, marginTop: 2 }}>
+                  Không có dữ liệu lớp. Vui lòng thêm lớp trước!
+                </div>
+              )}
+            </div>
+            <div className="cansu-form-group">
+              <select
+                name="MaNguoiDung"
+                value={form.MaNguoiDung || ''}
+                onChange={handleChange}
+                required
+                disabled={!!editing || !form.MaLop}
+              >
+                <option value="">--Chọn người--</option>
+                {form.MaLop && filteredUsers.length === 0 && (
+                  <option disabled value="">Không có sinh viên trong lớp này</option>
+                )}
+                {filteredUsers.map((u: any) => (
+                  <option key={u.MaNguoiDung} value={u.MaNguoiDung}>
+                    {u.HoTen || u.email || u.MaNguoiDung}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="cansu-form-group">
+              <input
+                name="ChucVu"
+                value={form.ChucVu || ''}
+                onChange={handleChange}
+                placeholder="Chức vụ"
+                required
+              />
+            </div>
+            <div className="cansu-form-row">
+              <input
+                name="TuNgay"
+                type="date"
+                value={form.TuNgay || ''}
+                onChange={handleChange}
+                required
+                style={{ flex: 1 }}
+                placeholder="Từ ngày"
+              />
+              <input
+                name="DenNgay"
+                type="date"
+                value={form.DenNgay || ''}
+                onChange={handleChange}
+                style={{ flex: 1 }}
+                placeholder="Đến ngày"
+              />
+            </div>
+            {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
+            <div className="cansu-form-actions">
+              <button type="submit" className="action-btn">
+                <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu cập nhật" : "Thêm mới"}
+              </button>
+              <button
+                type="button"
+                className="action-btn delete"
+                title="Hủy"
+                onClick={handleCancel}
+              >
+                <i className="fas fa-times"></i> Hủy
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      {/* Làm mờ phần danh sách khi form mở */}
+      <div style={showForm && canEdit ? { filter: 'blur(2px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
+        <h2>Danh sách cán sự</h2>
+        {/* Thanh tìm kiếm cán sự */}
+        <form
+          onSubmit={handleSearch}
+          style={{ display: 'flex', gap: 10, maxWidth: 400, margin: '0 auto 18px auto' }}
+        >
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên cán sự hoặc tên lớp..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '0.55rem 0.9rem',
+              borderRadius: 7,
+              border: '1.5px solid #2563eb',
+              fontSize: '1.05rem',
+              background: '#f9fafe'
+            }}
+            disabled={loading || searching}
+          />
+          <button
+            type="submit"
+            className="action-btn"
+            style={{
+              background: '#2563eb',
+              color: '#fff',
               borderRadius: 8,
               fontWeight: 600,
               fontSize: '1rem',
-              padding: '8px 12px',
+              padding: '8px 18px',
               border: 'none'
             }}
-            onClick={() => {
-              setSearch('');
-              fetchData();
-            }}
             disabled={loading || searching}
-            title="Xóa tìm kiếm"
           >
-            <i className="fas fa-times"></i>
+            <i className="fas fa-search"></i> Tìm kiếm
           </button>
-        )}
-      </form>
-      {showForm && canEdit && (
-        <form className="cansu-form" onSubmit={handleSubmit}>
-          <h3 className="cansu-form-title">
-            {editing ? 'Cập nhật cán sự' : 'Thêm cán sự mới'}
-          </h3>
-          <div className="cansu-form-group">
-            <select
-              name="MaLop"
-              value={form.MaLop || ''}
-              onChange={handleChange}
-              required
-              disabled={!!editing || classes.length === 0}
-            >
-              <option value="">--Chọn lớp--</option>
-              {classes.map((lop: any) => (
-                <option key={lop.MaLop} value={lop.MaLop}>
-                  {lop.TenLop}
-                </option>
-              ))}
-            </select>
-            {classes.length === 0 && (
-              <div className="form-error" style={{ fontSize: 13, marginTop: 2 }}>
-                Không có dữ liệu lớp. Vui lòng thêm lớp trước!
-              </div>
-            )}
-          </div>
-          <div className="cansu-form-group">
-            <select
-              name="MaNguoiDung"
-              value={form.MaNguoiDung || ''}
-              onChange={handleChange}
-              required
-              disabled={!!editing || !form.MaLop}
-            >
-              <option value="">--Chọn người--</option>
-              {form.MaLop && filteredUsers.length === 0 && (
-                <option disabled value="">Không có sinh viên trong lớp này</option>
-              )}
-              {filteredUsers.map((u: any) => (
-                <option key={u.MaNguoiDung} value={u.MaNguoiDung}>
-                  {u.HoTen || u.email || u.MaNguoiDung}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="cansu-form-group">
-            <input
-              name="ChucVu"
-              value={form.ChucVu || ''}
-              onChange={handleChange}
-              placeholder="Chức vụ"
-              required
-            />
-          </div>
-          <div className="cansu-form-row">
-            <input
-              name="TuNgay"
-              type="date"
-              value={form.TuNgay || ''}
-              onChange={handleChange}
-              required
-              style={{ flex: 1 }}
-              placeholder="Từ ngày"
-            />
-            <input
-              name="DenNgay"
-              type="date"
-              value={form.DenNgay || ''}
-              onChange={handleChange}
-              style={{ flex: 1 }}
-              placeholder="Đến ngày"
-            />
-          </div>
-          {error && <div className="form-error" style={{ marginBottom: 8 }}>{error}</div>}
-          <div className="cansu-form-actions">
-            <button type="submit" className="action-btn">
-              <i className={editing ? "fas fa-save" : "fas fa-plus"}></i> {editing ? "Lưu cập nhật" : "Thêm mới"}
-            </button>
+          {search && (
             <button
               type="button"
               className="action-btn delete"
-              title="Hủy"
-              onClick={handleCancel}
+              style={{
+                background: '#e0e7ef',
+                color: '#2563eb',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: '1rem',
+                padding: '8px 12px',
+                border: 'none'
+              }}
+              onClick={() => {
+                setSearch('');
+                fetchData();
+              }}
+              disabled={loading || searching}
+              title="Xóa tìm kiếm"
             >
-              <i className="fas fa-times"></i> Hủy
+              <i className="fas fa-times"></i>
             </button>
-          </div>
+          )}
         </form>
-      )}
-      {canEdit && (
-        <button
-          className="action-btn"
-          title="Thêm mới"
-          onClick={() => openForm()}
-          style={{
-            marginBottom: 18,
-            background: "#2563eb",
-            color: "#fff",
-            borderRadius: 8,
-            fontWeight: 600,
-            fontSize: "1rem",
-            padding: "8px 18px",
-            boxShadow: "0 2px 8px #2563eb22",
-            border: "none"
-          }}
-        >
-          <i className="fas fa-plus"></i> Thêm cán sự mới
-        </button>
-      )}
-      <div className="table-wrapper">
-        <table className="cansu-table">
-          <thead>
-            <tr>
-              <th>Người được thêm</th>
-              <th>Tên lớp</th>
-              <th>Chức vụ</th>
-              <th>Từ ngày</th>
-              <th>Đến ngày</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Đảm bảo dùng đúng biến visibleCanSu để render */}
-            {visibleCanSu.length === 0 ? (
+       
+        
+        {canEdit && (
+          <button
+            className="action-btn"
+            title="Thêm mới"
+            onClick={() => openForm()}
+            style={{
+              marginBottom: 18,
+              background: "#2563eb",
+              color: "#fff",
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: "1rem",
+              padding: "8px 18px",
+              boxShadow: "0 2px 8px #2563eb22",
+              border: "none"
+            }}
+          >
+            <i className="fas fa-plus"></i> Thêm cán sự mới
+          </button>
+        )}
+        <div className="table-wrapper">
+          <table className="cansu-table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
-                  Không có cán sự nào thuộc lớp của bạn.
-                </td>
+                <th>Người được thêm</th>
+                <th>Tên lớp</th>
+                <th>Chức vụ</th>
+                <th>Từ ngày</th>
+                <th>Đến ngày</th>
+                <th>Hành động</th>
               </tr>
-            ) : (
-              visibleCanSu.map(item => (
-                <tr key={item.MaCanSu}>
-                  <td>{item.TenCanSu || ''}</td>
-                  <td>{item.TenLop || ''}</td>
-                  <td>{item.ChucVu}</td>
-                  <td>{item.TuNgay ? new Date(item.TuNgay).toLocaleDateString() : ''}</td>
-                  <td>{item.DenNgay ? new Date(item.DenNgay).toLocaleDateString() : ''}</td>
-                  <td>
-                    {canEdit && (
-                      <>
-                        <button
-                          className="action-btn"
-                          title="Sửa"
-                          style={{
-                            background: "#e0e7ef",
-                            color: "#2563eb",
-                            borderRadius: 6,
-                            border: "none",
-                            marginRight: 6,
-                            padding: "6px 10px",
-                            fontSize: "1.1rem"
-                          }}
-                          onClick={() => handleEdit(item)}
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          className="action-btn delete"
-                          title="Xóa"
-                          style={{
-                            background: "#fdeaea",
-                            color: "#d32f2f",
-                            borderRadius: 6,
-                            border: "none",
-                            marginRight: 6,
-                            padding: "6px 10px",
-                            fontSize: "1.1rem"
-                          }}
-                          onClick={() => handleDelete(item.MaCanSu)}
-                        >
-                          <i className="fas fa-trash-alt"></i>
-                        </button>
-                      </>
-                    )}
+            </thead>
+            <tbody>
+              {/* Đảm bảo dùng đúng biến visibleCanSu để render */}
+              {visibleCanSu.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
+                    Không có cán sự nào thuộc lớp của bạn.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                visibleCanSu.map(item => (
+                  <tr key={item.MaCanSu}>
+                    <td>{item.TenCanSu || ''}</td>
+                    <td>{item.TenLop || ''}</td>
+                    <td>{item.ChucVu}</td>
+                    <td>{item.TuNgay ? new Date(item.TuNgay).toLocaleDateString() : ''}</td>
+                    <td>{item.DenNgay ? new Date(item.DenNgay).toLocaleDateString() : ''}</td>
+                    <td>
+                      {canEdit && (
+                        <>
+                          <button
+                            className="action-btn"
+                            title="Sửa"
+                            style={{
+                              background: "#e0e7ef",
+                              color: "#2563eb",
+                              borderRadius: 6,
+                              border: "none",
+                              marginRight: 6,
+                              padding: "6px 10px",
+                              fontSize: "1.1rem"
+                            }}
+                            onClick={() => handleEdit(item)}
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button
+                            className="action-btn delete"
+                            title="Xóa"
+                            style={{
+                              background: "#fdeaea",
+                              color: "#d32f2f",
+                              borderRadius: 6,
+                              border: "none",
+                              marginRight: 6,
+                              padding: "6px 10px",
+                              fontSize: "1.1rem"
+                            }}
+                            onClick={() => handleDelete(item.MaCanSu)}
+                          >
+                            <i className="fas fa-trash-alt"></i>
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -342,7 +342,7 @@ const TaskList: React.FC = () => {
 
   // --- BẮT ĐẦU PHẦN DANH SÁCH NHIỆM VỤ ---
   return (
-    <div className="task-list-page" style={{ height: '100vh', overflowY: 'auto' }}>
+    <div className="task-list-page">
       {/* Thanh tìm kiếm nhiệm vụ */}
       <form
         onSubmit={handleSearch}
@@ -428,84 +428,97 @@ const TaskList: React.FC = () => {
         </button>
       )}
       {showForm && canEdit && (
-        <form className="task-form" onSubmit={handleFormSubmit}>
-          <h3 className="task-form-title">
-            {editId ? 'Cập nhật nhiệm vụ' : 'Thêm nhiệm vụ mới'}
-          </h3>
-          <div className="task-form-group">
-            <input
-              name="TieuDe"
-              value={form.TieuDe || ''}
-              onChange={handleFormChange}
-              placeholder="Tên nhiệm vụ"
-              required
-              autoFocus
-            />
-          </div>
-          <div className="task-form-group">
-            <textarea
-              name="MoTa"
-              value={form.MoTa || ''}
-              onChange={handleFormChange}
-              placeholder="Mô tả nhiệm vụ"
-              rows={3}
-              required
-              style={{ resize: 'vertical', minHeight: 60 }}
-            />
-          </div>
-          <div className="task-form-row">
-            <input
-              name="HanHoanThanh"
-              type="date"
-              value={form.HanHoanThanh?.slice(0, 10) || ''}
-              onChange={handleFormChange}
-              required
-              placeholder="Hạn hoàn thành"
-            />
-            <select
-              name="DoUuTien"
-              value={form.DoUuTien || ''}
-              onChange={handleFormChange}
-              required
-            >
-              <option value="">Chọn độ ưu tiên</option>
-              <option value="Cao">Cao</option>
-              <option value="Trung bình">Trung bình</option>
-              <option value="Thấp">Thấp</option>
-            </select>
-          </div>
-          <div className="task-form-group">
-            <select
-              name="MaLop"
-              value={form.MaLop || ''}
-              onChange={handleFormChange}
-              required
-            >
-              <option value="">--Chọn lớp--</option>
-              {classes.map(lop => (
-                <option key={lop.MaLop} value={lop.MaLop}>
-                  {lop.TenLop}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="task-form-group">
-            <input
-              type="file"
-              name="TepDinhKem"
-              accept="*"
-              onChange={handleFileChange}
-              style={{ marginTop: 4 }}
-            />
-          </div>
-          {formError && <div className="form-error" style={{ marginBottom: 8 }}>{formError}</div>}
-          <div className="task-form-actions">
-            <button type="submit" className="action-btn">
-              <i className={editId ? "fas fa-save" : "fas fa-save"}></i> {editId ? "Lưu cập nhật" : "Lưu"}
-            </button>
-            <button type="button" className="action-btn delete" onClick={handleCancel}>Hủy</button>
-          </div>
-        </form>
+        <div className="task-form-overlay" onClick={handleCancel}>
+          <form
+            className="task-form"
+            onSubmit={handleFormSubmit}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ textAlign: 'center', color: '#2563eb', marginBottom: 10 }}>
+              {editId ? 'Cập nhật nhiệm vụ' : 'Thêm nhiệm vụ mới'}
+            </h3>
+            <div className="task-form-group">
+              <input
+                name="TieuDe"
+                value={form.TieuDe || ''}
+                onChange={handleFormChange}
+                placeholder="Tên nhiệm vụ"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="task-form-group">
+              <textarea
+                name="MoTa"
+                value={form.MoTa || ''}
+                onChange={handleFormChange}
+                placeholder="Mô tả nhiệm vụ"
+                rows={3}
+                required
+                style={{ resize: 'vertical', minHeight: 60 }}
+              />
+            </div>
+            <div className="task-form-row">
+              <input
+                name="HanHoanThanh"
+                type="date"
+                value={form.HanHoanThanh?.slice(0, 10) || ''}
+                onChange={handleFormChange}
+                required
+                placeholder="Hạn hoàn thành"
+              />
+              <select
+                name="DoUuTien"
+                value={form.DoUuTien || ''}
+                onChange={handleFormChange}
+                required
+              >
+                <option value="">Chọn độ ưu tiên</option>
+                <option value="Cao">Cao</option>
+                <option value="Trung bình">Trung bình</option>
+                <option value="Thấp">Thấp</option>
+              </select>
+            </div>
+            <div className="task-form-group">
+              <select
+                name="MaLop"
+                value={form.MaLop || ''}
+                onChange={handleFormChange}
+                required
+              >
+                <option value="">--Chọn lớp--</option>
+                {classes.map(lop => (
+                  <option key={lop.MaLop} value={lop.MaLop}>
+                    {lop.TenLop}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="task-form-group">
+              <input
+                type="file"
+                name="TepDinhKem"
+                accept="*"
+                onChange={handleFileChange}
+                style={{ marginTop: 4 }}
+              />
+            </div>
+            {formError && <div className="form-error" style={{ marginBottom: 8 }}>{formError}</div>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
+              <button type="submit" className="action-btn" title={editId ? "Lưu thay đổi" : "Thêm nhiệm vụ"}>
+                <i className={editId ? "fas fa-save" : "fas fa-plus"}></i> {editId ? "Lưu" : "Thêm mới"}
+              </button>
+              <button
+                type="button"
+                className="action-btn delete"
+                title="Hủy"
+                onClick={handleCancel}
+              >
+                <i className="fas fa-times"></i> Hủy
+              </button>
+            </div>
+          </form>
+        </div>
       )}
       <div className="task-table-wrap">
         <h3 style={{ margin: '16px 0 8px 0' }}>Danh sách nhiệm vụ</h3>
@@ -631,16 +644,19 @@ const TaskList: React.FC = () => {
       {/* Modal chi tiết nhiệm vụ */}
       {selectedTask && (
         <div
-          className="task-detail-modal"
+          className={`task-detail-modal-overlay ${selectedTask ? 'blur-background' : ''}`}
           style={{
             position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             background: 'rgba(0,0,0,0.25)',
             zIndex: 1000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            overflow: 'auto' // <-- enable scroll for modal background
+            overflow: 'auto'
           }}
           onClick={() => {
             setSelectedTask(null);
@@ -659,10 +675,10 @@ const TaskList: React.FC = () => {
               width: '98vw',
               position: 'relative',
               overflowX: 'auto',
-              maxHeight: '90vh', // <-- limit modal height
-              overflowY: 'auto'  // <-- enable scroll for modal content
+              maxHeight: '90vh',
+              overflowY: 'auto'
             }}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <button
               className="action-btn delete"
@@ -736,7 +752,7 @@ const TaskList: React.FC = () => {
             {/* Hiển thị danh sách chi tiết nộp bài */}
             {Array.isArray(taskDetail) && taskDetail.length > 0 && (
               <div style={{ marginBottom: 18, width: '100%', overflowX: 'auto' }}>
-                <h4 style={{ margin: '10px 0 8px 0', color: '#2563eb' }}>Danh sách nộp bài</h4>
+               
                 <div style={{ width: '100%', overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, minWidth: 900 }}>
                     <thead>

@@ -133,12 +133,12 @@
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(30,58,138,0.08);
-  padding: 16px 12px 12px 12px; /* giảm padding */
-  max-width: 370px;             /* nhỏ lại */
+  padding: 12px 10px 10px 10px; /* Giảm padding */
+  max-width: 350px;             /* Thu nhỏ form */
   margin: 0 auto 24px auto;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;                  /* giảm gap */
+  gap: 0.6rem;                  /* Giảm khoảng cách giữa các phần tử */
 }
 
 .task-form h3 {
@@ -146,14 +146,14 @@
   margin-bottom: 10px;
   color: #2563eb;
   letter-spacing: 1px;
-  font-size: 1.18rem;
+  font-size: 1.15rem;           /* Giảm kích thước tiêu đề */
   font-weight: 600;
 }
 
 .task-form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;                 /* Giảm khoảng cách giữa các trường */
 }
 
 .task-form-row {
@@ -231,6 +231,25 @@
 .task-form button[type="button"]:hover,
 .task-form .action-btn.delete:hover {
   background: #b71c1c;
+}
+
+.task-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-list-page.blurred {
+  filter: blur(2px);
+  pointer-events: none;
+  user-select: none;
 }
 
 @media (max-width: 900px) {

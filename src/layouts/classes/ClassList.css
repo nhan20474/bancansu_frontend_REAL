@@ -117,6 +117,16 @@
   margin-top: 24px;
 }
 
+.class-table-wrapper {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px #2563eb18;
+  overflow: hidden;
+  margin-top: 18px;
+  margin-bottom: 32px;
+  border: 1.5px solid #e0e7ef;
+}
+
 .class-table th, .class-table td {
   padding: 12px 10px;
   text-align: left;
@@ -143,8 +153,74 @@
   background: #f1f5f9;
 }
 
-.class-table td {
-  vertical-align: top;
+.class-table .even-row {
+  background: #f9fafe;
+  transition: background 0.18s;
+}
+.class-table .odd-row {
+  background: #fff;
+  transition: background 0.18s;
+}
+.class-table .class-code {
+  font-weight: 600;
+  color: #2563eb;
+}
+.class-table .class-name {
+  font-weight: 500;
+}
+.class-table .action-cell {
+  text-align: center;
+}
+.action-btn.add-class-btn {
+  margin-bottom: 18px;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 8px 18px;
+  box-shadow: 0 2px 8px #2563eb22;
+  border: none;
+}
+.action-btn.edit-btn {
+  margin-right: 6px;
+  background: #e0e7ef;
+  color: #2563eb;
+  border-radius: 6px;
+  border: none;
+}
+.action-btn.delete-btn {
+  margin-right: 6px;
+  background: #fdeaea;
+  color: #d32f2f;
+  border-radius: 6px;
+  border: none;
+}
+.action-btn.view-members-btn {
+  margin-left: 2px;
+  background: #f1f5f9;
+  color: #2563eb;
+  border-radius: 6px;
+  border: none;
+}
+
+.class-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.18);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.class-list-container.blurred {
+  filter: blur(2px);
+  pointer-events: none;
+  user-select: none;
 }
 
 @media (max-width: 900px) {
