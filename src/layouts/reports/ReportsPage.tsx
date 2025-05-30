@@ -15,6 +15,11 @@ interface DiemTrungBinhCanSu {
   HoTen: string;
   DiemTrungBinh: number;
 }
+interface DiemTrungBinhCanSuTheoLop {
+  TenLop: string;
+  HoTen: string;
+  DiemTrungBinh: number;
+}
 interface ThongKeResponse {
   tongquan: TongQuan;
   diemTrungBinhCanSu: DiemTrungBinhCanSu[];
@@ -23,6 +28,7 @@ interface ThongKeResponse {
 const ReportsPage: React.FC = () => {
   const [stats, setStats] = useState<TongQuan | null>(null);
   const [officerScores, setOfficerScores] = useState<DiemTrungBinhCanSu[]>([]);
+  const [avgOfficerScoresByClass, setAvgOfficerScoresByClass] = useState<DiemTrungBinhCanSuTheoLop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +46,16 @@ const ReportsPage: React.FC = () => {
         setError('Không thể tải dữ liệu thống kê.');
         setLoading(false);
       });
+  }, []);
+
+  useEffect(() => {
+    // Gọi API lấy điểm trung bình cán sự theo lớp
+    axios
+      .get<DiemTrungBinhCanSuTheoLop[]>('/thongke/diemtrungbinh-cansu')
+      .then(res => {
+        setAvgOfficerScoresByClass(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => setAvgOfficerScoresByClass([]));
   }, []);
 
   const handleExport = async (type: 'excel' | 'pdf') => {
@@ -80,8 +96,8 @@ const ReportsPage: React.FC = () => {
   }
   const userRole = getUserRole();
 
-  // Chỉ cho phép admin hoặc giảng viên xem trang này
-  if (userRole !== 'admin' && userRole !== 'giangvien') {
+  // Chỉ chặn sinh viên, các vai trò khác đều xem được
+  if (userRole === 'sinhvien') {
     return (
       <div className="reports-container">
         <div className="reports-form" style={{ maxWidth: 700, textAlign: 'center', color: '#d32f2f', padding: 32 }}>
@@ -129,60 +145,60 @@ const ReportsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Bảng điểm trung bình cán sự */}
-            <div style={{ marginTop: 32 }}>
-              <h3 style={{ marginBottom: 12 }}>🎯 Điểm trung bình cán sự</h3>
-              <table className="reports-table">
-                <thead>
-                  <tr>
-                    <th>STT</th>
-                    <th>Họ tên cán sự</th>
-                    <th>Điểm trung bình</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {officerScores.length === 0 ? (
+          
+
+            {/* Bảng điểm trung bình cán sự theo lớp */}
+            <div className="credibility-section" style={{ marginTop: 32 }}>
+              <div className="section-header">
+                <h3 className="section-title">
+                  <span className="section-icon">🏫</span>
+                   Thống kê độ tín nhiệm trung bình của cán sự
+                </h3>
+                <p className="section-subtitle">
+                  Thống kê độ tín nhiệm trung bình của cán sự
+                </p>
+              </div>
+              <div className="table-container">
+                <table className="credibility-table">
+                  <thead>
                     <tr>
-                      <td colSpan={3} style={{ textAlign: 'center' }}>Không có dữ liệu</td>
+                      <th className="stt-col">STT</th>
+                      <th className="name-col">Tên lớp</th>
+                      <th className="name-col">Tên cán sự</th>
+                      <th className="score-col">Độ tính nhiệm </th>
                     </tr>
-                  ) : (
-                    officerScores.map((o, idx) => {
-                      // Ép kiểu về số thực nếu cần
-                      const diem = typeof o.DiemTrungBinh === 'string'
-                        ? parseFloat(o.DiemTrungBinh)
-                        : o.DiemTrungBinh;
-                      return (
-                        <tr key={o.MaNguoiDung}>
-                          <td>{idx + 1}</td>
-                          <td>{o.HoTen}</td>
-                          <td>
-                            <span style={{
-                              color:
-                                diem >= 4.5 ? '#059669' :
-                                diem >= 4 ? '#16a34a' :
-                                diem >= 3 ? '#ca8a04' :
-                                diem >= 2 ? '#ea580c' :
-                                '#dc2626',
-                              fontWeight: 600
-                            }}>
-                              {diem == null
+                  </thead>
+                  <tbody>
+                    {avgOfficerScoresByClass.length === 0 ? (
+                      <tr className="empty-row">
+                        <td colSpan={4}>
+                          <div className="empty-state">
+                            <span className="empty-icon">📊</span>
+                            <p>Chưa có dữ liệu thống kê</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      avgOfficerScoresByClass.map((row, idx) => (
+                        <tr key={row.TenLop + row.HoTen}>
+                          <td className="stt-cell">
+                            <span className="stt-number">{idx + 1}</span>
+                          </td>
+                          <td className="name-cell">{row.TenLop}</td>
+                          <td className="name-cell">{row.HoTen}</td>
+                          <td className="score-cell">
+                            <span className="score-value">
+                              {row.DiemTrungBinh === null || row.DiemTrungBinh === undefined || isNaN(Number(row.DiemTrungBinh))
                                 ? '-'
-                                : (Number.isInteger(diem)
-                                    ? diem
-                                    : diem.toFixed(2).replace(/\.?0+$/, ''))}{' '}
-                              <span style={{ color: '#f59e42', fontSize: '1.1em' }}>
-                                {diem && diem > 0
-                                  ? '★'.repeat(Math.round(diem)) + '☆'.repeat(5 - Math.round(diem))
-                                  : ''}
-                              </span>
+                                : Number(row.DiemTrungBinh).toFixed(2).replace(/\.?0+$/, '')}
                             </span>
                           </td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Nút xuất báo cáo */}
@@ -193,16 +209,9 @@ const ReportsPage: React.FC = () => {
                 onClick={() => handleExport('excel')}
                 disabled={loading}
               >
-                Xuất báo cáo Excel
+                Xuất báo cáo lớp học Excel
               </button>
-              <button
-                className="reports-btn"
-                type="button"
-                onClick={() => handleExport('pdf')}
-                disabled={loading}
-              >
-                Xuất báo cáo PDF
-              </button>
+             
             </div>
           </>
         )}

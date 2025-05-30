@@ -57,6 +57,8 @@ function ClassList() {
   const userRole = getUserRole(user);
   // Chỉ admin và giảng viên được phép sửa/xóa/thêm
   const canEdit = userRole === 'admin' || userRole === 'giaovien';
+  // Chỉ admin mới được thêm/xóa thành viên lớp
+  const canManageMembers = userRole === 'admin';
 
   // Lấy danh sách lớp học (fix: luôn trả về mảng, không bị lỗi khi backend trả về object hoặc null)
   const fetchData = async () => {
@@ -268,25 +270,30 @@ function ClassList() {
 
   // Thêm thành viên vào lớp (mở form)
   const handleAddMember = async (classId: number) => {
+    if (!canManageMembers) return; // Chỉ admin mới được thêm thành viên
     setShowAddMemberForm(true);
     setAddMemberUserId('');
     setAddMemberError(null);
     try {
-      const res = await axios.get('/user/all');
-      const users = Array.isArray(res.data) ? res.data : [];
-      // Lấy danh sách thành viên đã có trong lớp hiện tại
-      const currentMemberIds = members.map((m: any) => String(m.MaNguoiDung));
-      // Chỉ hiện những sinh viên/cán sự chưa thuộc lớp nào (không có MaLop hoặc MaLop=null/0/undefined)
-      // và chưa là thành viên lớp hiện tại
+      // Lấy danh sách thành viên lớp từ tất cả lớp (không chỉ lớp hiện tại)
+      const [usersRes, allMembersRes] = await Promise.all([
+        axios.get('/user/all'),
+        axios.get('/lop/thanhvien/all')
+      ]);
+      const users = Array.isArray(usersRes.data) ? usersRes.data : [];
+      const allMembers = Array.isArray(allMembersRes.data) ? allMembersRes.data : [];
+      // Lấy tất cả MaNguoiDung đã là thành viên bất kỳ lớp nào (chỉ lấy duy nhất mỗi MaNguoiDung)
+      const memberIdSet = new Set<string>();
+      allMembers.forEach((m: any) => {
+        if (m && m.MaNguoiDung !== undefined && m.MaNguoiDung !== null) {
+          memberIdSet.add(String(m.MaNguoiDung));
+        }
+      });
+      // Chỉ hiện những sinh viên/cán sự chưa là thành viên bất kỳ lớp nào (không bị lặp)
       const filteredUsers = users.filter((u: any) => {
         const role = (u.VaiTro || u.role || u.vaitro || u.Role || u.ROLE || '').toString().toLowerCase();
-        const hasLop = !!u.MaLop && u.MaLop !== 0 && u.MaLop !== null && u.MaLop !== undefined;
-        // Chỉ lấy sinh viên/cán sự chưa có lớp (MaLop rỗng) và chưa là thành viên lớp hiện tại
-        return (
-          (role === 'cansu' || role === 'sinhvien') &&
-          !hasLop &&
-          !currentMemberIds.includes(String(u.MaNguoiDung))
-        );
+        return (role === 'cansu' || role === 'sinhvien')
+          && !memberIdSet.has(String(u.MaNguoiDung));
       });
       setAddMemberUsers(filteredUsers);
     } catch {
@@ -300,6 +307,10 @@ function ClassList() {
     e.preventDefault();
     setAddMemberError(null);
 
+    if (!canManageMembers) {
+      setAddMemberError('Chỉ admin mới được thêm thành viên vào lớp.');
+      return;
+    }
     // Kiểm tra dữ liệu trước khi gửi
     if (!addMemberUserId) {
       setAddMemberError('Vui lòng chọn người dùng.');
@@ -349,6 +360,10 @@ function ClassList() {
 
   // Xóa thành viên khỏi lớp
   const handleRemoveMember = async (classId: number, userId: number) => {
+    if (!canManageMembers) {
+      alert('Chỉ admin mới được xóa thành viên khỏi lớp.');
+      return;
+    }
     if (!classId || !userId) return;
     if (!window.confirm('Bạn có chắc chắn muốn xóa thành viên này khỏi lớp?')) return;
     try {
@@ -721,24 +736,26 @@ function ClassList() {
               Thành viên lớp: {selectedClass?.TenLop}
             </h3>
             <div style={{ marginBottom: 16, textAlign: 'right' }}>
-              <button
-                className="action-btn"
-                style={{
-                  background: "#2563eb",
-                  color: "#fff",
-                  borderRadius: 6,
-                  border: "none",
-                  padding: "6px 14px",
-                  fontWeight: 600,
-                  fontSize: "1rem"
-                }}
-                onClick={() => handleAddMember(selectedClass!.MaLop)}
-              >
-                <i className="fas fa-user-plus"></i> Thêm thành viên
-              </button>
+              {canManageMembers && (
+                <button
+                  className="action-btn"
+                  style={{
+                    background: "#2563eb",
+                    color: "#fff",
+                    borderRadius: 6,
+                    border: "none",
+                    padding: "6px 14px",
+                    fontWeight: 600,
+                    fontSize: "1rem"
+                  }}
+                  onClick={() => handleAddMember(selectedClass!.MaLop)}
+                >
+                  <i className="fas fa-user-plus"></i> Thêm thành viên
+                </button>
+              )}
             </div>
             {/* Form thêm thành viên riêng */}
-            {showAddMemberForm && (
+            {showAddMemberForm && canManageMembers && (
               <form
                 onSubmit={handleAddMemberSubmit}
                 style={{
@@ -857,21 +874,23 @@ function ClassList() {
                         <td style={{ padding: 10 }}>{m.Email || ''}</td>
                         <td style={{ padding: 10 }}>{m.SoDienThoai || ''}</td>
                         <td style={{ padding: 10, textAlign: 'center' }}>
-                          <button
-                            className="action-btn delete"
-                            title="Xóa thành viên"
-                            style={{
-                              background: "#fdeaea",
-                              color: "#d32f2f",
-                              borderRadius: 6,
-                              border: "none",
-                              padding: "6px 10px",
-                              fontSize: "1.1rem"
-                            }}
-                            onClick={() => handleRemoveMember(selectedClass!.MaLop, m.MaNguoiDung)}
-                          >
-                            <i className="fas fa-user-minus"></i>
-                          </button>
+                          {canManageMembers && (
+                            <button
+                              className="action-btn delete"
+                              title="Xóa thành viên"
+                              style={{
+                                background: "#fdeaea",
+                                color: "#d32f2f",
+                                borderRadius: 6,
+                                border: "none",
+                                padding: "6px 10px",
+                                fontSize: "1.1rem"
+                              }}
+                              onClick={() => handleRemoveMember(selectedClass!.MaLop, m.MaNguoiDung)}
+                            >
+                              <i className="fas fa-user-minus"></i>
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

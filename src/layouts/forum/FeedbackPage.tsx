@@ -2,7 +2,7 @@
  * FeedbackPage: Allows users to submit feedback about officers or the system.
  */
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../../api/axiosConfig';
 import './FeedbackPage.css';
 
 const API_BASE = 'http://localhost:8080';
@@ -727,7 +727,7 @@ const FeedbackPage: React.FC = () => {
                 <h2>Đánh giá gần đây</h2>
                 <div className="stats">
                   <span>{feedbackStats.total} đánh giá</span>
-                  <span>TB: {feedbackStats.avgRating}/5</span>
+                  <span>Độ tín nhiệm: {feedbackStats.avgRating}/5</span>
                 </div>
               </div>
               

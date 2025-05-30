@@ -53,9 +53,9 @@ const CanSuList: React.FC = () => {
 
   const fetchData = () => {
     setLoading(true);
-    // Lấy cả danh sách cán sự và user song song
+    // Gọi API /cansu (đã lọc theo vai trò ở backend, dựa vào req.user)
     Promise.all([
-      axios.get('/cansu'),
+      axios.get('/cansu'), // Không cần truyền user info, backend sẽ lấy từ req.user (middleware requireAuth)
       axios.get('/user/all')
     ])
       .then(([cansuRes, userRes]) => {
@@ -105,10 +105,22 @@ const CanSuList: React.FC = () => {
         axios.get(`/lop/${value}/thanhvien`)
           .then(res => {
             const members = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
-            setFilteredUsers(members);
+            // Lọc chỉ những thành viên có role là sinhvien
+            const sinhVienMembers = members.filter((u: any) => {
+              const role = (
+                u.VaiTro ||
+                u.role ||
+                u.vaitro ||
+                u.Role ||
+                u.ROLE ||
+                ''
+              ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+              return role === 'sinhvien';
+            });
+            setFilteredUsers(sinhVienMembers);
             // Nếu có user đầu tiên thì tự động chọn vào dropdown
-            if (members.length > 0) {
-              setForm(prev => ({ ...prev, MaNguoiDung: members[0].MaNguoiDung }));
+            if (sinhVienMembers.length > 0) {
+              setForm(prev => ({ ...prev, MaNguoiDung: sinhVienMembers[0].MaNguoiDung }));
             } else {
               setForm(prev => ({ ...prev, MaNguoiDung: 0 }));
             }
@@ -148,7 +160,19 @@ const CanSuList: React.FC = () => {
       })
       .then(res => {
         const members = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
-        setFilteredUsers(members);
+        // Lọc chỉ những thành viên có role là sinhvien
+        const sinhVienMembers = members.filter((u: any) => {
+          const role = (
+            u.VaiTro ||
+            u.role ||
+            u.vaitro ||
+            u.Role ||
+            u.ROLE ||
+            ''
+          ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+          return role === 'sinhvien';
+        });
+        setFilteredUsers(sinhVienMembers);
       })
       .catch(() => {
         setClasses([]);
@@ -284,10 +308,14 @@ const CanSuList: React.FC = () => {
       userLopIds = (user as any).dsLopIds.map((id: any) => Number(id)).filter((id: any) => !isNaN(id));
     }
     // Nếu vẫn không có, thử lấy từ MaLopHoc hoặc các trường khác nếu có
-    // Nếu là sinh viên, có thể chỉ có userId, cần map từ danh sách cán sự
-    if (userLopIds.length === 0 && userRole === 'sinhvien') {
+    // Nếu là sinh viên/cán sự, có thể chỉ có userId, cần map từ danh sách cán sự
+    if (
+      userLopIds.length === 0 &&
+      (userRole === 'sinhvien' || userRole === 'cansu')
+    ) {
       const userId = (user as any).userId || (user as any).MaNguoiDung;
-      if (userId) {
+      if (userId && cansu.length > 0) {
+        // Lấy tất cả MaLop mà user này là thành viên (MaNguoiDung === userId)
         const lopIdsFromCanSu = cansu
           .filter(cs => cs.MaNguoiDung === userId)
           .map(cs => cs.MaLop);
@@ -298,32 +326,28 @@ const CanSuList: React.FC = () => {
     }
   }
 
-  // Đảm bảo userLopIds cập nhật khi cansu thay đổi (dành cho sinh viên)
-  // Nếu là sinh viên, userLopIds vẫn rỗng và có userId, thì cập nhật lại userLopIds khi cansu thay đổi
+  // Đảm bảo userLopIds cập nhật khi cansu thay đổi (dành cho sinh viên/cán sự)
   React.useEffect(() => {
-    if (userRole === 'sinhvien' && user && userLopIds.length === 0) {
+    if (
+      (userRole === 'sinhvien' || userRole === 'cansu') &&
+      user &&
+      userLopIds.length === 0
+    ) {
       const userId = (user as any).userId || (user as any).MaNguoiDung;
       if (userId && cansu.length > 0) {
         const lopIdsFromCanSu = cansu
           .filter(cs => cs.MaNguoiDung === userId)
           .map(cs => cs.MaLop);
         if (lopIdsFromCanSu.length > 0) {
-          // Cập nhật lại userLopIds bằng cách set lại state (nếu muốn dùng state) hoặc trigger render lại
-          // Ở đây chỉ log để debug, nếu muốn dùng state thì cần chuyển userLopIds thành state
-          // console.log('Cập nhật userLopIds cho sinh viên:', lopIdsFromCanSu);
+          // Không setState ở đây vì userLopIds không phải state, chỉ log để debug
+          // console.log('Cập nhật userLopIds cho sinh viên/cán sự:', lopIdsFromCanSu);
         }
       }
     }
-  }, [cansu, user, userRole]);
-  
-  // Lọc danh sách cán sự hiển thị theo quyền
-  // Giảng viên, cán sự, sinh viên đều xem được cán sự của lớp mình
-  const visibleCanSu =
-    userRole === 'admin'
-      ? cansu
-      : userLopIds.length > 0
-        ? cansu.filter(item => userLopIds.includes(item.MaLop))
-        : cansu;
+  }, [cansu, user, userRole, userLopIds.length]);
+
+  // Không filter lại theo userLopIds, chỉ dùng dữ liệu trả về từ backend
+  const visibleCanSu: CanSu[] = cansu;
 
   // Thêm log để debug dữ liệu user, userRole, userLopIds, cansu, visibleCanSu
   console.log('user:', user);
@@ -434,7 +458,7 @@ const CanSuList: React.FC = () => {
             >
               <option value="">--Chọn người--</option>
               {form.MaLop && filteredUsers.length === 0 && (
-                <option disabled value="">Không có thành viên trong lớp này</option>
+                <option disabled value="">Không có sinh viên trong lớp này</option>
               )}
               {filteredUsers.map((u: any) => (
                 <option key={u.MaNguoiDung} value={u.MaNguoiDung}>

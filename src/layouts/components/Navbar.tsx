@@ -98,6 +98,36 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dropdownOpen]);
 
+  // Lắng nghe sự kiện reload từ avatar update
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      // Reload trang để đồng bộ avatar mới
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    };
+
+    window.addEventListener('avatarUpdated', handleAvatarUpdate);
+    return () => {
+      window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+    };
+  }, []);
+
+  // Chỉ hiển thị số lượng thông báo mới thực sự đang hiển thị trong dropdown
+  // newNotifications là các thông báo chưa đọc (read !== true)
+  const newNotifications = notifications.filter(n => !n.read);
+
+  // Số badge trên chuông phải đúng bằng số thông báo mới thực sự hiển thị trong dropdown
+  // Nếu bạn lấy notifications từ propNotifications và setNotifications từ nhiều nguồn, hãy chỉ dùng 1 nguồn nhất quán!
+  // Đảm bảo notifications luôn là mảng thông báo mới nhất, không bị lặp hoặc cộng dồn.
+
+  // Đồng bộ giao diện dropdown thông báo với trang /notifications
+  // Hiển thị danh sách thông báo mới nhất (không chỉ chưa đọc), giống NotificationList
+  // Sắp xếp thông báo mới nhất lên đầu
+  const sortedNotifications = [...notifications].sort(
+    (a, b) => new Date(b.ThoiGianGui).getTime() - new Date(a.ThoiGianGui).getTime()
+  );
+
   return (
     <nav className="top-navbar d-flex justify-between align-center px-3">
       <div className="d-flex align-center">
@@ -117,44 +147,86 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
             style={{ cursor: 'pointer', fontSize: '1.3rem', color: '#1e3a8a', marginRight: 16 }}
             title="Thông báo"
           />
-          {/* Hiển thị số thông báo mới */}
-          {notifications.length > 0 && (
+          {/* Hiển thị dấu chấm đỏ nếu có thông báo, không hiện số */}
+          {sortedNotifications.length > 0 && (
             <span
               style={{
                 position: 'absolute',
-                top: -2,
-                right: 6,
-                minWidth: 18,
-                height: 18,
+                top: 2,
+                right: 8,
+                width: 12,
+                height: 12,
                 background: '#d32f2f',
-                color: '#fff',
                 borderRadius: '50%',
-                fontSize: 12,
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 border: '2px solid #fff',
                 zIndex: 2,
-                padding: '0 5px'
+                display: 'inline-block',
+                padding: 0
               }}
-            >
-              {notifications.length}
-            </span>
+            ></span>
           )}
           {showDropdown && (
-            <div className="notification-dropdown">
-              <div className="dropdown-title">Thông báo mới</div>
-              <ul>
-                {notifications.length === 0 && <li className="empty">Không có thông báo mới</li>}
-                {notifications.map(tb => (
-                  <li key={tb.MaThongBao}>
-                    <b>{tb.TieuDe}</b>
-                    <div className="time">{new Date(tb.ThoiGianGui).toLocaleString()}</div>
+            <div className="notification-dropdown" style={{
+              maxHeight: 260,
+              overflowY: 'auto',
+              minWidth: 320,
+              boxShadow: '0 4px 24px #2563eb22',
+              borderRadius: 10,
+              background: '#fff',
+              position: 'absolute',
+              top: 38,
+              right: 0,
+              zIndex: 100,
+              padding: '10px 0 0 0',
+              border: '1.5px solid #e0e7ef'
+            }}>
+              <div className="dropdown-title" style={{
+                fontWeight: 700,
+                color: '#2563eb',
+                fontSize: 16,
+                padding: '8px 18px 8px 18px',
+                borderBottom: '1px solid #e0e7ef',
+                background: '#f5f8ff'
+              }}>
+                Thông báo mới
+              </div>
+              <ul style={{
+                listStyle: 'none',
+                margin: 0,
+                padding: 0,
+                maxHeight: 180,
+                overflowY: 'auto'
+              }}>
+                {sortedNotifications.length === 0 && <li className="empty" style={{
+                  color: '#888',
+                  textAlign: 'center',
+                  padding: '18px 0'
+                }}>Không có thông báo mới</li>}
+                {sortedNotifications.map(tb => (
+                  <li key={tb.MaThongBao} style={{
+                    borderBottom: '1px solid #f1f5f9',
+                    padding: '10px 18px'
+                  }}>
+                    <b style={{ fontSize: 15, color: '#222' }}>{tb.TieuDe}</b>
+                    <div className="time" style={{
+                      color: '#64748b',
+                      fontSize: 13,
+                      marginTop: 2
+                    }}>{tb.ThoiGianGui ? new Date(tb.ThoiGianGui).toLocaleString('vi-VN') : ''}</div>
                   </li>
                 ))}
               </ul>
-              <a href="/notifications" className="see-all">Xem tất cả</a>
+              <a href="/notifications" className="see-all" style={{
+                display: 'block',
+                textAlign: 'center',
+                color: '#2563eb',
+                fontWeight: 600,
+                padding: '10px 0 12px 0',
+                textDecoration: 'none',
+                borderTop: '1px solid #e0e7ef',
+                background: '#f8fafc',
+                borderRadius: '0 0 10px 10px'
+              }}>Xem tất cả</a>
             </div>
           )}
         </div>
@@ -220,7 +292,7 @@ const Navbar = ({ toggleSidebar, toggleFullscreen, notifications: propNotificati
                 <ul>
                   <li className="disabled">Tài khoản</li>
                   <li>
-                    <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link to="/profilepage" style={{ textDecoration: 'none', color: 'inherit' }}>
                       <i className="fas fa-user" style={{ marginRight: '8px' }}></i>
                       Hồ sơ cá nhân
                     </Link>

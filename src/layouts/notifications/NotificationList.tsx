@@ -60,7 +60,7 @@ const NotificationList: React.FC = () => {
   const [search, setSearch] = useState('');
   const [searching, setSearching] = useState(false);
 
-  // Phân quyền: cho phép admin, giảng viên và cán sự thêm/sửa/xóa thông báo
+  // Phân quyền: chỉ admin và giáo viên được thêm/sửa/xóa, còn lại chỉ xem
   function getUserRole(user: any): string {
     if (!user) return '';
     return (
@@ -73,8 +73,8 @@ const NotificationList: React.FC = () => {
     ).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
   }
   const userRole = getUserRole(user);
-  // Cập nhật: cho phép cả admin, giảng viên (giangvien) và cán sự (cansu) thêm/sửa/xóa
-  const canEdit = userRole === 'admin' || userRole === 'giangvien' || userRole === 'cansu';
+  // Cho phép cả cán sự được thêm/sửa/xóa
+  const canEdit = userRole === 'admin' || userRole === 'giaovien' || userRole === 'cansu';
 
   const fetchData = () => {
     setLoading(true);
@@ -178,8 +178,12 @@ const NotificationList: React.FC = () => {
     }
 
     // Kiểm tra tất cả trường bắt buộc
-    if (!form.TieuDe || !form.NoiDung) {
-      setError('Vui lòng nhập đầy đủ các trường: Tiêu đề và Nội dung.');
+    if (
+      !form.TieuDe ||
+      !form.NoiDung ||
+      !form.MaLop
+    ) {
+      setError('Vui lòng nhập đầy đủ các trường: Tiêu đề, Nội dung, Mã lớp.');
       return;
     }
     setError(null);
@@ -187,7 +191,7 @@ const NotificationList: React.FC = () => {
     const formData = new FormData();
     formData.append('TieuDe', form.TieuDe || '');
     formData.append('NoiDung', form.NoiDung || '');
-    // Không cần append MaLop nữa
+    formData.append('MaLop', form.MaLop ? String(form.MaLop) : '');
     formData.append('NguoiGui', user?.userId ? String(user.userId) : '');
     if (form.AnhDinhKem) {
       if (typeof form.AnhDinhKem === 'string') {
@@ -255,17 +259,7 @@ const NotificationList: React.FC = () => {
       } else if (res.data && typeof res.data === 'object') {
         data = [res.data];
       }
-      // Đảm bảo mỗi thông báo đều có trường AnhDinhKemUrl đúng
-      setNotifications(
-        data.map((item: Notification & { AnhDinhKemUrl?: string | null }) => ({
-          ...item,
-          AnhDinhKemUrl: item.AnhDinhKemUrl && typeof item.AnhDinhKemUrl === 'string' && item.AnhDinhKemUrl.trim() !== ''
-            ? item.AnhDinhKemUrl
-            : (item.AnhDinhKem && typeof item.AnhDinhKem === 'string' && item.AnhDinhKem.trim() !== '' && item.AnhDinhKem !== 'null'
-                ? getImageUrl(item.AnhDinhKem)
-                : undefined)
-        }))
-      );
+      setNotifications(data);
     } catch (err) {
       setError('Không tìm thấy thông báo phù hợp.');
       setNotifications([]);
@@ -383,7 +377,19 @@ const NotificationList: React.FC = () => {
             rows={4}
             required
           />
-          {/* Đã xóa trường chọn lớp ở đây */}
+          <select
+            name="MaLop"
+            value={form.MaLop || ''}
+            onChange={handleChange}
+            required
+          >
+            <option value="">--Chọn lớp--</option>
+            {classes.map(lop => (
+              <option key={lop.MaLop} value={lop.MaLop}>
+                {lop.TenLop}
+              </option>
+            ))}
+          </select>
           <input
             name="link"
             value={form.link || ''}
